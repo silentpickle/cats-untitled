@@ -125,9 +125,10 @@ It becomes worth fixing at M4 if the stock cat needs reshaping (long fur for the
 
 ## Status (2026-11-16)
 
-M0 to M4 are built for the main floor: both cats, the computer sibling, nap points, treats, swat, hiding,
-scoring, the round clock, cat select and score screens, kit furniture tinted to match the photos, keyboard
-and touch controls. Not started: the second floor, people, the mischief list, sound, and publishing.
+Built for the main floor: both cats (Aragorn the brother, Arwen the sister), the computer sibling, nap
+points, treats, swat, hiding, scoring, the round clock, cat select and score screens, kit furniture tinted
+to match the photos, keyboard and touch controls, a mischief list per cat, knockable things (cup, remote,
+toy mouse) and synthesized sound. Not started: the second floor, people, the bedtime ending, publishing.
 
 Known rough edges:
 
@@ -136,3 +137,5 @@ Known rough edges:
 - The brother's "long hair" is only a wider body; the stock model has no fur.
 - Balance between the two computer cats swings a lot with small setting changes (`src/balance.test.ts`
   only guards against a shutout).
+- The computer cat does not go after its mischief list; it only ticks items off by accident.
+- Sounds are synthesized and have not been tuned by ear.

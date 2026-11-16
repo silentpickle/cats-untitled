@@ -13,13 +13,18 @@
     <canvas id="stage"></canvas>
 
     <div id="hud" hidden>
-      <div class="score brother"><span class="who">Brother</span><b id="score-brother">0</b></div>
+      <div class="score brother"><span class="who">Aragorn</span><b id="score-brother">0</b></div>
       <div class="middle">
         <div id="timer">3:00</div>
         <div id="points"></div>
       </div>
-      <div class="score sister"><span class="who">Sister</span><b id="score-sister">0</b></div>
+      <div class="score sister"><span class="who">Arwen</span><b id="score-sister">0</b></div>
     </div>
+    <div id="mischief" hidden>
+      <h2>Mischief</h2>
+      <ul id="mischief-items"></ul>
+    </div>
+    <button id="mute" type="button" aria-pressed="false">Sound on</button>
     <div id="toast"></div>
     <div id="hint" hidden></div>
 
@@ -33,15 +38,15 @@
       <p>Nap on the glowing spots to claim them. Most points when the timer runs out wins.</p>
       <div class="choices">
         <button type="button" data-cat="brother" class="brother">
-          <b>Brother</b>
+          <b>Aragorn</b>
           <span>Big, slow, full of swagger. Claims spots fast and swats his sister away.</span>
         </button>
         <button type="button" data-cat="sister" class="sister">
-          <b>Sister</b>
+          <b>Arwen</b>
           <span>Quick and shy. Hides under tables, sneaks treats, runs rings around him.</span>
         </button>
       </div>
-      <p class="keys">Move: WASD or arrow keys. Brother swats with Space.</p>
+      <p class="keys">Move: WASD or arrow keys. Aragorn swats with Space.</p>
     </div>
 
     <div id="result" class="screen" hidden>

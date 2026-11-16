@@ -1,4 +1,6 @@
+import { SoundBoard } from "./audio";
 import { loadSettings, type AppSettings } from "./config";
+import { feedbackFor } from "./feedback";
 import { MAIN_FLOOR } from "./house/mainFloor";
 import { platformHeightAt, toWorld } from "./house/toWorld";
 import type { HouseFloor } from "./house/types";
@@ -7,6 +9,7 @@ import { TouchControls } from "./input/touch";
 import { loadCatViews, type CatView } from "./render/catView";
 import { FollowCamera } from "./render/followCamera";
 import { buildHouse } from "./render/houseView";
+import { KnockableViews } from "./render/knockableViews";
 import { Markers } from "./render/markers";
 import { createStage, type Stage } from "./render/stage";
 import { aiInput, buildNavGrid, createGame, step, type NavGrid } from "./sim";
@@ -22,7 +25,8 @@ import {
 } from "./sim/types";
 import { element } from "./ui/dom";
 import { Hud } from "./ui/hud";
-import { Screens, catName } from "./ui/screens";
+import { MischiefList } from "./ui/mischiefList";
+import { Screens } from "./ui/screens";
 
 const STEPS_PER_SECOND = 60;
 const SIM_STEP = 1 / STEPS_PER_SECOND;
@@ -31,7 +35,7 @@ const MS_PER_SECOND = 1000;
 const HALF = 0.5;
 
 const HINTS: Record<CatId, string> = {
-  brother: "Sit still on a ring to claim it. Space swats your sister.",
+  brother: "Sit still on a ring to claim it. Space swats Arwen.",
   sister: "Sit still on a ring to claim it. Hide under tables; grab the gold treats.",
 };
 
@@ -62,6 +66,8 @@ class Game {
   private readonly navs: Record<CatId, NavGrid>;
   private readonly followCamera: FollowCamera;
   private readonly hud = new Hud();
+  private readonly mischiefList = new MischiefList();
+  private readonly sounds = new SoundBoard();
   private readonly screens: Screens;
   private readonly center: Vec2;
 
@@ -72,6 +78,7 @@ class Game {
     private readonly stage: Stage,
     private readonly cats: Record<CatId, CatView>,
     private readonly markers: Markers,
+    private readonly knockables: KnockableViews,
     private readonly controls: Controls,
   ) {
     this.state = createGame(world, settings.sim);
@@ -103,6 +110,9 @@ class Game {
     this.state = createGame(this.world, this.settings.sim);
     this.player = cat;
     this.hud.show(cat, this.world.napPoints.length, HINTS[cat]);
+    this.mischiefList.show(cat, this.world.mischief);
+    this.sounds.unlock();
+    this.sounds.play(cat === "brother" ? "meow_brother" : "meow_sister");
     element("swat-button", HTMLElement).hidden = cat !== "brother";
   }
 
@@ -110,9 +120,23 @@ class Game {
     this.player = null;
     this.state = createGame(this.world, this.settings.sim);
     this.hud.hide();
+    this.mischiefList.hide();
+    this.sounds.setPurring(false);
+  }
+
+  private wireMute(): void {
+    const button = element("mute", HTMLButtonElement);
+    button.addEventListener("click", () => {
+      const muted = !this.sounds.muted;
+      this.sounds.unlock();
+      this.sounds.setMuted(muted);
+      button.textContent = muted ? "Sound off" : "Sound on";
+      button.setAttribute("aria-pressed", String(muted));
+    });
   }
 
   start(): void {
+    this.wireMute();
     new ResizeObserver(() => {
       this.stage.resize();
     }).observe(this.stage.renderer.domElement);
@@ -168,28 +192,21 @@ class Game {
   }
 
   private react(event: GameEvent, player: CatId): void {
-    const pointName = (id: string): string =>
-      this.world.napPoints.find((point) => point.id === id)?.name ?? id;
-    const handlers: { [K in GameEvent["kind"]]: (e: Extract<GameEvent, { kind: K }>) => void } = {
-      captured: (e) => {
-        this.hud.say(`${catName(e.by)} claimed the ${pointName(e.pointId)}`);
-      },
-      swatted: () => {
-        this.cats.brother.playSwat();
-        this.hud.say("Swat!");
-      },
-      swat_missed: () => {
-        this.cats.brother.playSwat();
-      },
-      treat: (e) => {
-        this.hud.say(`${catName(e.by)} found a treat`);
-      },
-      round_over: (e) => {
-        this.hud.hide();
-        this.screens.showResult(this.state, player, e.winner);
-      },
-    };
-    (handlers[event.kind] as (e: GameEvent) => void)(event);
+    const feedback = feedbackFor(event, player, this.world);
+    if (feedback.toast !== null) {
+      this.hud.say(feedback.toast);
+    }
+    feedback.sounds.forEach((sound) => {
+      this.sounds.play(sound);
+    });
+    if (event.kind === "swatted" || event.kind === "swat_missed") {
+      this.cats.brother.playSwat();
+    }
+    if (event.kind === "round_over") {
+      this.hud.hide();
+      this.mischiefList.hide();
+      this.screens.showResult(this.state, player, event.winner);
+    }
   }
 
   private draw(dt: number): void {
@@ -199,7 +216,11 @@ class Game {
       this.cats[id].update(cat, ground, dt);
     }
     this.markers.update(this.state, dt);
+    this.knockables.update(this.state, dt);
     this.hud.update(this.state);
+    this.mischiefList.update(this.state);
+    const me = this.player === null ? null : this.state.cats[this.player];
+    this.sounds.setPurring(me !== null && me.napping && this.state.phase === "playing");
     const focus = this.player === null ? this.center : this.state.cats[this.player].pos;
     this.followCamera.update(focus, dt);
     this.stage.render();
@@ -213,7 +234,14 @@ async function boot(): Promise<Game> {
   const stage = createStage(element("stage", HTMLCanvasElement), world.bounds);
   const [house, cats] = await Promise.all([buildHouse(floor), loadCatViews(settings.sim.cats)]);
   const markers = new Markers(floor.napPoints, floor.treatSpawns);
-  stage.scene.add(house, markers.object, cats.brother.object, cats.sister.object);
+  const knockables = new KnockableViews(floor.knockables);
+  stage.scene.add(
+    house,
+    markers.object,
+    knockables.object,
+    cats.brother.object,
+    cats.sister.object,
+  );
 
   const touch = new TouchControls(
     element("stick", HTMLElement),
@@ -221,7 +249,7 @@ async function boot(): Promise<Game> {
     element("swat-button", HTMLElement),
   );
   element("touch", HTMLElement).hidden = !window.matchMedia("(pointer: coarse)").matches;
-  const game = new Game(settings, floor, world, stage, cats, markers, {
+  const game = new Game(settings, floor, world, stage, cats, markers, knockables, {
     keyboard: new Keyboard(window),
     touch,
   });

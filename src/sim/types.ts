@@ -45,12 +45,38 @@ export interface TreatSpawnDef {
   readonly pos: Vec2;
 }
 
+/** Something small a cat can knock over by brushing past it. */
+export interface KnockableDef {
+  readonly id: string;
+  readonly name: string;
+  readonly pos: Vec2;
+}
+
+/** What has to happen for a mischief-list item to be ticked off. */
+export type MischiefGoal =
+  | { readonly kind: "knock"; readonly knockableId: string }
+  | { readonly kind: "claim"; readonly pointId: string }
+  | { readonly kind: "own_count"; readonly count: number }
+  | { readonly kind: "swat" }
+  | { readonly kind: "tease"; readonly seconds: number }
+  | { readonly kind: "treat"; readonly treatId: string };
+
+/** One line on a cat's to-do list. */
+export interface MischiefDef {
+  readonly id: string;
+  readonly label: string;
+  readonly cat: CatId;
+  readonly goal: MischiefGoal;
+}
+
 export interface WorldDef {
   readonly bounds: Rect;
   readonly obstacles: readonly Obstacle[];
   readonly napPoints: readonly NapPointDef[];
   readonly hideSpots: readonly HideSpotDef[];
   readonly treatSpawns: readonly TreatSpawnDef[];
+  readonly knockables: readonly KnockableDef[];
+  readonly mischief: readonly MischiefDef[];
   readonly spawn: Readonly<Record<CatId, Vec2>>;
 }
 
@@ -81,6 +107,12 @@ export interface Settings {
     readonly points: number;
     readonly respawnSeconds: number;
     readonly pickupRadius: number;
+  };
+  readonly mischief: {
+    readonly points: number;
+    readonly knockRadius: number;
+    readonly knockPoints: number;
+    readonly resetSeconds: number;
   };
 }
 
@@ -118,11 +150,28 @@ export interface TreatState {
   readonly respawnIn: number;
 }
 
+export interface KnockableState {
+  readonly id: string;
+  readonly knockedBy: CatId | null;
+  /** Seconds until someone puts it back; 0 while it is standing. */
+  readonly resetIn: number;
+}
+
+export interface MischiefState {
+  readonly id: string;
+  readonly cat: CatId;
+  readonly done: boolean;
+  /** 0 to 1; only goals that take time (teasing) sit between the two. */
+  readonly progress: number;
+}
+
 export type GameEvent =
   | { readonly kind: "captured"; readonly pointId: string; readonly by: CatId }
   | { readonly kind: "swatted"; readonly by: CatId; readonly target: CatId }
   | { readonly kind: "swat_missed"; readonly by: CatId }
   | { readonly kind: "treat"; readonly treatId: string; readonly by: CatId }
+  | { readonly kind: "knocked"; readonly knockableId: string; readonly by: CatId }
+  | { readonly kind: "mischief"; readonly mischiefId: string; readonly by: CatId }
   | { readonly kind: "round_over"; readonly winner: CatId | "tie" };
 
 export type Phase = "playing" | "finished";
@@ -133,6 +182,8 @@ export interface GameState {
   readonly cats: Readonly<Record<CatId, CatState>>;
   readonly points: readonly NapPointState[];
   readonly treats: readonly TreatState[];
+  readonly knockables: readonly KnockableState[];
+  readonly mischief: readonly MischiefState[];
   /** Things that happened during the step that produced this state. */
   readonly events: readonly GameEvent[];
 }

@@ -37,6 +37,15 @@ points = 5
 respawn_seconds = 20.0
 pickup_radius = 0.5
 
+[mischief]
+# Bonus for ticking an item off a cat's mischief list.
+points = 15
+# How close a cat must pass to knock something over, the small bonus for it, and how long until
+# someone puts it back.
+knock_radius = 0.45
+knock_points = 2
+reset_seconds = 25.0
+
 [camera]
 height = 9.0
 distance = 7.0

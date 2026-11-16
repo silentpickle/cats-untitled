@@ -51,6 +51,8 @@ export function toWorld(floor: HouseFloor): WorldDef {
     napPoints: floor.napPoints.map(({ id, name, pos }) => ({ id, name, pos })),
     hideSpots: hideSpots(floor.furniture),
     treatSpawns: floor.treatSpawns,
+    knockables: floor.knockables.map(({ id, name, pos }) => ({ id, name, pos })),
+    mischief: floor.mischief,
     spawn: floor.spawn,
   };
 }

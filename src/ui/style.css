@@ -217,3 +217,65 @@ button.sister {
   font-weight: 700;
   pointer-events: auto;
 }
+#mischief {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  max-width: 230px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-radius: 14px;
+  font-size: 13px;
+}
+#mischief h2 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+#mischief ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#mischief li {
+  padding: 2px 0 2px 20px;
+  position: relative;
+}
+#mischief li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+#mischief li.done {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+#mischief li.done::before {
+  background: var(--ink);
+}
+#mute {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 12px;
+  color: var(--ink);
+  background: var(--panel);
+  z-index: 11;
+}
+@media (max-width: 700px) {
+  #mischief {
+    top: 78px;
+    font-size: 12px;
+    max-width: 170px;
+  }
+}

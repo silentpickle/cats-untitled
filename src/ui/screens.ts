@@ -1,7 +1,7 @@
 import type { CatId, GameState } from "../sim/types";
 import { element } from "./dom";
 
-const CAT_NAMES: Record<CatId, string> = { brother: "Brother", sister: "Sister" };
+const CAT_NAMES: Record<CatId, string> = { brother: "Aragorn", sister: "Arwen" };
 
 export function catName(cat: CatId): string {
   return CAT_NAMES[cat];
@@ -39,7 +39,7 @@ export class Screens {
     const brother = String(Math.floor(state.cats.brother.score));
     const sister = String(Math.floor(state.cats.sister.score));
     this.title.textContent = resultTitle(player, winner);
-    this.detail.textContent = `Brother ${brother} · Sister ${sister}. Bedtime: both cats curl up together.`;
+    this.detail.textContent = `Aragorn ${brother} · Arwen ${sister}. Bedtime: both cats curl up together.`;
     this.result.hidden = false;
   }
 }

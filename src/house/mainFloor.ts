@@ -373,5 +373,67 @@ export const MAIN_FLOOR: HouseFloor = {
     { id: "treat_tv", pos: { x: 5.9, z: 1.7 } },
     { id: "treat_foyer", pos: { x: 8.8, z: 7.3 } },
   ],
+  knockables: [
+    { id: "cup", name: "coffee cup", pos: { x: 0.9, z: 4.9 }, height: 0.95, look: "cup" },
+    { id: "remote", name: "TV remote", pos: { x: 5.3, z: 1.5 }, height: 0.38, look: "remote" },
+    { id: "toy_mouse", name: "toy mouse", pos: { x: 8.5, z: 5.55 }, height: 0, look: "toy" },
+  ],
+  mischief: [
+    { id: "swat_arwen", label: "Swat Arwen", cat: "brother", goal: { kind: "swat" } },
+    {
+      id: "knock_cup",
+      label: "Knock the cup off the counter",
+      cat: "brother",
+      goal: { kind: "knock", knockableId: "cup" },
+    },
+    {
+      id: "claim_couch",
+      label: "Claim the couch",
+      cat: "brother",
+      goal: { kind: "claim", pointId: "couch" },
+    },
+    {
+      id: "bat_mouse",
+      label: "Bat the toy mouse",
+      cat: "brother",
+      goal: { kind: "knock", knockableId: "toy_mouse" },
+    },
+    {
+      id: "own_four",
+      label: "Hold 4 spots at once",
+      cat: "brother",
+      goal: { kind: "own_count", count: 4 },
+    },
+    {
+      id: "tease_aragorn",
+      label: "Hide near Aragorn for 5 seconds",
+      cat: "sister",
+      goal: { kind: "tease", seconds: 5 },
+    },
+    {
+      id: "table_treat",
+      label: "Sneak the treat under the table",
+      cat: "sister",
+      goal: { kind: "treat", treatId: "treat_table" },
+    },
+    {
+      id: "knock_remote",
+      label: "Knock the remote off the ottoman",
+      cat: "sister",
+      goal: { kind: "knock", knockableId: "remote" },
+    },
+    {
+      id: "claim_sunbeam",
+      label: "Nap in the sunbeam",
+      cat: "sister",
+      goal: { kind: "claim", pointId: "sunbeam" },
+    },
+    {
+      id: "claim_counter_bed",
+      label: "Take the bed on the counter",
+      cat: "sister",
+      goal: { kind: "claim", pointId: "counter_bed" },
+    },
+  ],
   spawn: { brother: { x: 6, z: 3.5 }, sister: { x: 4.3, z: 3.5 } },
 };

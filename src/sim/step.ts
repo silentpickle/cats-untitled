@@ -8,12 +8,15 @@ import { updateCapture, updateNapping } from "./capture";
 import { scoreOwnedPoints } from "./scoring";
 import { pickUpTreats, tickTreats } from "./treats";
 import { tickRound } from "./round";
+import { knockThings, resetKnocked } from "./knock";
+import { updateMischief } from "./mischief";
 import { clamp } from "./geometry";
 
 /**
  * The rules, in the order they run each step. Movement comes first so everything after it sees where
  * the cats ended up; timers tick before the swat so a fresh stun or cooldown lasts its full length;
- * the round clock runs last so the final step still scores.
+ * mischief runs after every rule whose events it reads; the round clock runs last so the final step
+ * still scores.
  */
 const RULES: readonly Rule[] = [
   applyMovement,
@@ -26,6 +29,9 @@ const RULES: readonly Rule[] = [
   scoreHiding,
   tickTreats,
   pickUpTreats,
+  resetKnocked,
+  knockThings,
+  updateMischief,
   tickRound,
 ];
 

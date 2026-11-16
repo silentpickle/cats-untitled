@@ -28,6 +28,7 @@ export const TEST_SETTINGS: Settings = {
   swat: { range: 0.9, stunSeconds: 1.2, cooldownSeconds: 4, fleeSeconds: 2.5 },
   hide: { pointsPerSecond: 0.5, teaseRange: 3 },
   treats: { points: 5, respawnSeconds: 20, pickupRadius: 0.5 },
+  mischief: { points: 15, knockRadius: 0.5, knockPoints: 2, resetSeconds: 25 },
 };
 
 export const BOUNDS: Rect = { minX: 0, minZ: 0, maxX: 12, maxZ: 10 };
@@ -65,6 +66,8 @@ export const TEST_WORLD: WorldDef = {
     { id: "fish", pos: FISH },
     { id: "mouse", pos: MOUSE },
   ],
+  knockables: [],
+  mischief: [],
   spawn: { brother: { x: 1, z: 4 }, sister: { x: 11, z: 5 } },
 };
 

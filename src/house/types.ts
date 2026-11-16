@@ -1,4 +1,12 @@
-import type { Blocks, NapPointDef, Rect, TreatSpawnDef, Vec2 } from "../sim/types";
+import type {
+  Blocks,
+  KnockableDef,
+  MischiefDef,
+  NapPointDef,
+  Rect,
+  TreatSpawnDef,
+  Vec2,
+} from "../sim/types";
 
 /** Quarter turns clockwise seen from above; 0 means the piece's front faces +z (toward the camera). */
 export type Turns = 0 | 1 | 2 | 3;
@@ -57,6 +65,14 @@ export interface NapPointPlacement extends NapPointDef {
   readonly height: number;
 }
 
+export type KnockableLook = "cup" | "remote" | "toy";
+
+export interface KnockablePlacement extends KnockableDef {
+  /** Height of whatever it stands on. */
+  readonly height: number;
+  readonly look: KnockableLook;
+}
+
 export interface HouseFloor {
   readonly id: string;
   readonly name: string;
@@ -66,5 +82,7 @@ export interface HouseFloor {
   readonly furniture: readonly FurnitureDef[];
   readonly napPoints: readonly NapPointPlacement[];
   readonly treatSpawns: readonly TreatSpawnDef[];
+  readonly knockables: readonly KnockablePlacement[];
+  readonly mischief: readonly MischiefDef[];
   readonly spawn: { readonly brother: Vec2; readonly sister: Vec2 };
 }

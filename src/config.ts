@@ -51,6 +51,7 @@ function simSettings(root: Table): Settings {
   const swat = table(root, "swat");
   const hide = table(root, "hide");
   const treats = table(root, "treats");
+  const mischief = table(root, "mischief");
   return {
     round: { durationSeconds: num(table(root, "round"), "duration_seconds") },
     capture: {
@@ -70,6 +71,12 @@ function simSettings(root: Table): Settings {
       points: num(treats, "points"),
       respawnSeconds: num(treats, "respawn_seconds"),
       pickupRadius: num(treats, "pickup_radius"),
+    },
+    mischief: {
+      points: num(mischief, "points"),
+      knockRadius: num(mischief, "knock_radius"),
+      knockPoints: num(mischief, "knock_points"),
+      resetSeconds: num(mischief, "reset_seconds"),
     },
   };
 }

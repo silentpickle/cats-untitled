@@ -25,6 +25,8 @@ export function createGame(world: WorldDef, settings: Settings): GameState {
     cats: { brother: newCat("brother", world), sister: newCat("sister", world) },
     points: world.napPoints.map((p) => ({ id: p.id, owner: null, capturer: null, progress: 0 })),
     treats: world.treatSpawns.map((t) => ({ id: t.id, available: true, respawnIn: 0 })),
+    knockables: world.knockables.map((k) => ({ id: k.id, knockedBy: null, resetIn: 0 })),
+    mischief: world.mischief.map((m) => ({ id: m.id, cat: m.cat, done: false, progress: 0 })),
     events: [],
   };
 }
