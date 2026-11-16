@@ -119,9 +119,9 @@ It becomes worth fixing at M4 if the stock cat needs reshaping (long fur for the
 | --------------------------------------------------------------- | ------------------ | --------------------------------- |
 | Go-ahead to download the cat model and furniture kit            | M1 with a real cat | Capsule stand-in                  |
 | The cats' names                                                 | Cat select screen  | "Brother" and "Sister"            |
-| What the player plays on (keyboard, tablet, phone)                    | M7 controls        | Keyboard first, touch added at M7 |
+| What the player plays on (keyboard, tablet, phone)              | M7 controls        | Keyboard first, touch added at M7 |
 | Floor plan sketch, including what "top" and "bottom" floors are | M5                 | Invented bedroom level            |
-| Newer photos, especially the kid's room and the bed                | M5 finale          | Generic bedroom                   |
+| Newer photos, especially the kid's room and the bed             | M5 finale          | Generic bedroom                   |
 
 ## Status (2026-11-16)
 
