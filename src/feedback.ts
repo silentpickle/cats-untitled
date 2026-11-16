@@ -27,7 +27,14 @@ const RULES: { readonly [K in GameEvent["kind"]]: FeedbackFor<K> } = {
     sounds: event.by === player ? ["capture", MEOWS[player]] : ["capture_lost"],
   }),
   swatted: () => ({ toast: "Swat!", sounds: ["swat", "startled"] }),
-  swat_missed: () => ({ toast: null, sounds: ["swat_miss"] }),
+  swat_missed: (event, player) => ({
+    toast: event.by === player ? "Missed!" : null,
+    sounds: ["swat_miss"],
+  }),
+  stealth: (event, player) => ({
+    toast: event.by === player ? "Stealth!" : `${catName(event.by)} vanished`,
+    sounds: ["swat_miss"],
+  }),
   treat: (event, player) => ({
     toast: `${catName(event.by)} found a treat`,
     sounds: event.by === player ? ["treat"] : [],

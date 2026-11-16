@@ -23,6 +23,7 @@ import {
   type Vec2,
   type WorldDef,
 } from "./sim/types";
+import { abilityStatus } from "./ui/ability";
 import { element } from "./ui/dom";
 import { Hud } from "./ui/hud";
 import { MischiefList } from "./ui/mischiefList";
@@ -35,8 +36,8 @@ const MS_PER_SECOND = 1000;
 const HALF = 0.5;
 
 const HINTS: Record<CatId, string> = {
-  brother: "Sit still on a ring to claim it. Space swats Arwen.",
-  sister: "Sit still on a ring to claim it. Hide under tables; grab the gold treats.",
+  brother: "Sit still on a ring to claim it. Space swats Arwen if she is close.",
+  sister: "Sit still on a ring to claim it. Space makes you unseen for 3 seconds.",
 };
 
 interface Controls {
@@ -54,6 +55,7 @@ function playerInput(controls: Controls): CatInput {
   return {
     move: { x: keys.x + stick.x, z: keys.z + stick.z },
     swat: controls.keyboard.swat() || controls.touch.swat(),
+    stealth: controls.keyboard.swat() || controls.touch.swat(),
   };
 }
 
@@ -113,7 +115,9 @@ class Game {
     this.mischiefList.show(cat, this.world.mischief);
     this.sounds.unlock();
     this.sounds.play(cat === "brother" ? "meow_brother" : "meow_sister");
-    element("swat-button", HTMLElement).hidden = cat !== "brother";
+    const button = element("swat-button", HTMLElement);
+    button.textContent = cat === "brother" ? "Swat" : "Stealth";
+    button.className = cat;
   }
 
   private reset(): void {
@@ -213,12 +217,15 @@ class Game {
     for (const id of CAT_IDS) {
       const cat = this.state.cats[id];
       const ground = platformHeightAt(this.floor, cat.pos.x, cat.pos.z);
-      this.cats[id].update(cat, ground, dt);
+      this.cats[id].update(cat, ground, dt, this.player === "sister");
     }
     this.markers.update(this.state, dt);
     this.knockables.update(this.state, dt);
     this.hud.update(this.state);
     this.mischiefList.update(this.state);
+    if (this.player !== null) {
+      this.hud.showAbility(abilityStatus(this.state.cats[this.player]));
+    }
     const me = this.player === null ? null : this.state.cats[this.player];
     this.sounds.setPurring(me !== null && me.napping && this.state.phase === "playing");
     const focus = this.player === null ? this.center : this.state.cats[this.player].pos;

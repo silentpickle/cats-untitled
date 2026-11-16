@@ -27,6 +27,12 @@ const TUNING = {
   chestFleckHeight: 0.2,
   chestFleckForward: 0.3,
   roughness: 0.85,
+  lungeSeconds: 0.28,
+  lungeReach: 0.45,
+  ownGhost: 0.38,
+  rivalGhost: 0.1,
+  ghostEase: 10,
+  solid: 0.99,
 } as const;
 
 const WHITE = 0xffffff;
@@ -52,8 +58,9 @@ function clipFor(clips: readonly THREE.AnimationClip[], pose: Pose): THREE.Anima
   return clip;
 }
 
-function paintBlack(model: THREE.Object3D): void {
+function paintBlack(model: THREE.Object3D): THREE.MeshStandardMaterial[] {
   let painted: THREE.Texture | null = null;
+  const materials: THREE.MeshStandardMaterial[] = [];
   model.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) {
       return;
@@ -63,10 +70,13 @@ function paintBlack(model: THREE.Object3D): void {
       return;
     }
     painted ??= blackCatTexture(original.map);
-    child.material = new THREE.MeshStandardMaterial({ map: painted, roughness: TUNING.roughness });
+    const black = new THREE.MeshStandardMaterial({ map: painted, roughness: TUNING.roughness });
+    materials.push(black);
+    child.material = black;
     child.castShadow = true;
     child.frustumCulled = false;
   });
+  return materials;
 }
 
 function poseFor(state: CatState, id: CatId): Pose {
@@ -109,6 +119,9 @@ export class CatView {
   private pose: Pose = "idle";
   private swatting = false;
   private walkClock = 0;
+  private lungeLeft = 0;
+  private opacity = 1;
+  private readonly materials: THREE.MeshStandardMaterial[];
   private readonly baseScale: THREE.Vector3;
 
   constructor(
@@ -117,7 +130,7 @@ export class CatView {
     clips: readonly THREE.AnimationClip[],
     settings: CatSettings,
   ) {
-    paintBlack(model);
+    this.materials = paintBlack(model);
     model.rotation.y = MODEL_YAW;
     model.updateMatrixWorld(true);
     const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
@@ -128,7 +141,9 @@ export class CatView {
     this.body.add(model);
     this.object.add(this.body);
     if (id === "sister") {
-      this.object.add(this.chestFleck(settings.scale));
+      const fleck = this.chestFleck(settings.scale);
+      this.materials.push(fleck.material);
+      this.object.add(fleck);
     }
 
     this.mixer = new THREE.AnimationMixer(model);
@@ -157,7 +172,7 @@ export class CatView {
   }
 
   /** The sister's tiny white patch. */
-  private chestFleck(scale: number): THREE.Mesh {
+  private chestFleck(scale: number): THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> {
     const edge = TUNING.chestFleckSize * scale;
     const fleck = new THREE.Mesh(
       new THREE.BoxGeometry(edge, edge, edge),
@@ -170,6 +185,7 @@ export class CatView {
 
   playSwat(): void {
     this.swatting = true;
+    this.lungeLeft = TUNING.lungeSeconds;
     this.switchTo("swat");
   }
 
@@ -187,7 +203,8 @@ export class CatView {
     previous.fadeOut(TUNING.fade);
   }
 
-  update(state: CatState, groundHeight: number, dt: number): void {
+  /** `ownView` is true when the player is this cat's side of a stealth (she sees herself faintly). */
+  update(state: CatState, groundHeight: number, dt: number, ownView: boolean): void {
     if (!this.swatting) {
       this.switchTo(poseFor(state, this.id));
     }
@@ -203,6 +220,29 @@ export class CatView {
 
     this.settle(napping, dt);
     this.swagger(state.moving, dt);
+    this.lunge(dt);
+    this.fade(state.stealthFor > 0, ownView, dt);
+  }
+
+  /** A quick hop forward and back so a swat reads even when he is standing still. */
+  private lunge(dt: number): void {
+    this.lungeLeft = Math.max(0, this.lungeLeft - dt);
+    const done = 1 - this.lungeLeft / TUNING.lungeSeconds;
+    this.body.position.z = Math.sin(Math.PI * done) * TUNING.lungeReach;
+  }
+
+  /** Stealth: faint to the player who is hiding, nearly gone to the player who is hunting. */
+  private fade(unseen: boolean, ownView: boolean, dt: number): void {
+    const ghost = ownView ? TUNING.ownGhost : TUNING.rivalGhost;
+    const goal = unseen ? ghost : 1;
+    this.opacity += (goal - this.opacity) * ease(TUNING.ghostEase, dt);
+    const seeThrough = this.opacity < TUNING.solid;
+    for (const material of this.materials) {
+      // Three.js only notices a change to `transparent` when the material is flagged for rebuild.
+      material.needsUpdate = material.transparent !== seeThrough;
+      material.transparent = seeThrough;
+      material.opacity = seeThrough ? this.opacity : 1;
+    }
   }
 
   /** Sinks into a loaf while napping. */

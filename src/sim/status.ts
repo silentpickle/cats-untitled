@@ -12,8 +12,14 @@ function fleeDirection(cat: CatState, other: CatState): Vec2 {
 function effectiveInput(state: GameState, id: CatId, input: CatInput): CatInput {
   const cat = state.cats[id];
   if (cat.stunnedFor > 0) return IDLE_INPUT;
-  if (cat.fleeFor > 0) return { move: fleeDirection(cat, state.cats[otherCat(id)]), swat: false };
-  return { move: finiteVec(input.move), swat: id === "brother" && input.swat };
+  if (cat.fleeFor > 0) {
+    return { ...IDLE_INPUT, move: fleeDirection(cat, state.cats[otherCat(id)]) };
+  }
+  return {
+    move: finiteVec(input.move),
+    swat: id === "brother" && input.swat,
+    stealth: id === "sister" && input.stealth,
+  };
 }
 
 /** What each cat actually does this step: stun freezes it, flee overrides its direction. */
@@ -26,13 +32,17 @@ export function effectiveInputs(state: GameState, inputs: Inputs): Inputs {
 
 /** Stun counts down first; flee only counts down once the stun is over. */
 function tickCat(cat: CatState, dt: number): CatState {
-  const swatCooldown = countDown(cat.swatCooldown, dt);
-  if (cat.stunnedFor > 0)
-    return { ...cat, swatCooldown, stunnedFor: countDown(cat.stunnedFor, dt) };
-  return { ...cat, swatCooldown, fleeFor: countDown(cat.fleeFor, dt) };
+  const ticked: CatState = {
+    ...cat,
+    swatCooldown: countDown(cat.swatCooldown, dt),
+    stealthFor: countDown(cat.stealthFor, dt),
+    stealthCooldown: countDown(cat.stealthCooldown, dt),
+  };
+  if (cat.stunnedFor > 0) return { ...ticked, stunnedFor: countDown(cat.stunnedFor, dt) };
+  return { ...ticked, fleeFor: countDown(cat.fleeFor, dt) };
 }
 
-/** Rule: stun, flee and swat cooldown timers count down. */
+/** Rule: stun, flee, swat cooldown and stealth timers count down. */
 export function tickTimers(state: GameState, ctx: StepContext): GameState {
   return mapCats(state, (cat) => tickCat(cat, ctx.dt));
 }

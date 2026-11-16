@@ -13,6 +13,8 @@ function newCat(id: CatId, world: WorldDef): CatState {
     stunnedFor: 0,
     fleeFor: 0,
     swatCooldown: 0,
+    stealthFor: 0,
+    stealthCooldown: 0,
     score: 0,
   };
 }

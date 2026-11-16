@@ -35,6 +35,8 @@ const SISTER_DANGER_METRES = 2.5;
 const SISTER_DANGER_COOLDOWN_SECONDS = 0.5;
 /** Sister: he is coming at her when the cosine between his facing and her direction is above this. */
 const SISTER_CHASE_CONE_COS = 0.5;
+/** Sister: vanish when he is within this multiple of his swat range with a swat ready. */
+const SISTER_STEALTH_RANGE_FACTOR = 1.3;
 /** Sister: metres of her own walk she trades for each metre of distance from her brother. */
 const SISTER_BROTHER_DISTANCE_WEIGHT = 2;
 
@@ -147,21 +149,34 @@ function brotherTarget(view: AiView): NapPointDef | undefined {
 
 function shouldSwat(view: AiView): boolean {
   const { me, other, settings } = view;
-  if (me.swatCooldown > 0 || other.hidden) return false;
+  if (me.swatCooldown > 0 || other.hidden || other.stealthFor > 0) return false;
   if (other.stunnedFor > 0 || other.fleeFor > 0) return false;
   return distance(me.pos, other.pos) <= settings.swat.range * BROTHER_SWAT_REACH_FRACTION;
 }
 
 function brotherInput(view: AiView): CatInput {
   const target = brotherTarget(view);
-  return { move: target === undefined ? ZERO : moveToNap(view, target), swat: shouldSwat(view) };
+  return {
+    move: target === undefined ? ZERO : moveToNap(view, target),
+    swat: shouldSwat(view),
+    stealth: false,
+  };
 }
 
 // ---- Sister ----
 
-/** He is close, his swat is (nearly) ready, and he is walking at her. */
+/** His swat is (nearly) ready and he is close enough to land it soon: time to vanish. */
+function shouldStealth(view: AiView): boolean {
+  const { me, other, settings } = view;
+  if (me.stealthCooldown > 0 || me.hidden) return false;
+  if (other.swatCooldown > SISTER_DANGER_COOLDOWN_SECONDS) return false;
+  return distance(me.pos, other.pos) <= settings.swat.range * SISTER_STEALTH_RANGE_FACTOR;
+}
+
+/** He is close, his swat is (nearly) ready, and he is walking at her. Never while she is unseen. */
 function isThreatened(view: AiView): boolean {
   const { me, other } = view;
+  if (me.stealthFor > 0) return false;
   if (!other.moving || other.swatCooldown > SISTER_DANGER_COOLDOWN_SECONDS) return false;
   if (distance(me.pos, other.pos) > SISTER_DANGER_METRES) return false;
   return dot(headingVector(other.facing), directionTo(other.pos, me.pos)) >= SISTER_CHASE_CONE_COS;
@@ -242,9 +257,9 @@ const SISTER_PLANS: readonly Plan[] = [evade, keepCapturing, chaseTreat, capture
 function sisterInput(view: AiView): CatInput {
   for (const plan of SISTER_PLANS) {
     const move = plan(view);
-    if (move !== undefined) return { move, swat: false };
+    if (move !== undefined) return { move, swat: false, stealth: shouldStealth(view) };
   }
-  return IDLE_INPUT;
+  return { ...IDLE_INPUT, stealth: shouldStealth(view) };
 }
 
 // ---- Entry point ----

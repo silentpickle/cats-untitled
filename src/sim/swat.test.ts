@@ -50,7 +50,7 @@ describe("swat", () => {
   it("swat_misses_out_of_range", () => {
     const next = stepTest(sisterAt(OUT_OF_REACH), SWAT_INPUT, DT);
     expect(next.cats.sister.stunnedFor).toBe(0);
-    expect(next.cats.brother.swatCooldown).toBe(SWAT.cooldownSeconds);
+    expect(next.cats.brother.swatCooldown).toBe(SWAT.missCooldownSeconds);
     expect(next.events).toEqual([{ kind: "swat_missed", by: "brother" }]);
   });
 
@@ -68,7 +68,7 @@ describe("swat", () => {
     expect(second.events).toEqual([]);
     expect(second.cats.sister.stunnedFor).toBe(0);
     expect(second.cats.brother.swatCooldown).toBeCloseTo(
-      SWAT.cooldownSeconds - DT,
+      SWAT.missCooldownSeconds - DT,
       PRECISION_DIGITS,
     );
   });

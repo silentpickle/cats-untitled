@@ -99,9 +99,13 @@ export interface Settings {
   readonly swat: {
     readonly range: number;
     readonly stunSeconds: number;
+    /** Wait after a swat that lands. */
     readonly cooldownSeconds: number;
+    /** Shorter wait after a swat that hits nothing, so he can try again. */
+    readonly missCooldownSeconds: number;
     readonly fleeSeconds: number;
   };
+  readonly stealth: { readonly seconds: number; readonly cooldownSeconds: number };
   readonly hide: { readonly pointsPerSecond: number; readonly teaseRange: number };
   readonly treats: {
     readonly points: number;
@@ -132,6 +136,10 @@ export interface CatState {
   readonly fleeFor: number;
   /** Brother only: seconds until he can swat again. */
   readonly swatCooldown: number;
+  /** Sister only: seconds of stealth left; she cannot be swatted while it runs. */
+  readonly stealthFor: number;
+  /** Sister only: seconds until she can go stealthy again, counted from when she last did. */
+  readonly stealthCooldown: number;
   readonly score: number;
 }
 
@@ -169,6 +177,7 @@ export type GameEvent =
   | { readonly kind: "captured"; readonly pointId: string; readonly by: CatId }
   | { readonly kind: "swatted"; readonly by: CatId; readonly target: CatId }
   | { readonly kind: "swat_missed"; readonly by: CatId }
+  | { readonly kind: "stealth"; readonly by: CatId }
   | { readonly kind: "treat"; readonly treatId: string; readonly by: CatId }
   | { readonly kind: "knocked"; readonly knockableId: string; readonly by: CatId }
   | { readonly kind: "mischief"; readonly mischiefId: string; readonly by: CatId }
@@ -193,6 +202,8 @@ export interface CatInput {
   readonly move: Vec2;
   /** Brother only; ignored for the sister. */
   readonly swat: boolean;
+  /** Sister only; ignored for the brother. */
+  readonly stealth: boolean;
 }
 
 export type Inputs = Readonly<Record<CatId, CatInput>>;

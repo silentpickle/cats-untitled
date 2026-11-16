@@ -24,6 +24,7 @@ const FLOORS: Record<FloorMaterial, number> = {
   sunbeam: 0xf6e7a6,
 };
 const FLOOR_LAYER_STEP = 0.004;
+const OPENING_GAP = 0.02;
 
 const DEFAULT_BOX_COLOR = 0xb0a090;
 const GLOW = { intensity: 6, distance: 4.5, emissive: 2 } as const;
@@ -87,8 +88,12 @@ function wallMaterials(): WallMaterials {
 
 function wallMeshes(wall: WallDef, mats: WallMaterials): THREE.Mesh[] {
   const rect = wallRect(wall);
-  const width = Math.max(rect.maxX - rect.minX, WALL_THICKNESS);
-  const depth = Math.max(rect.maxZ - rect.minZ, WALL_THICKNESS);
+  // Plain walls overlap their neighbours to fill corners. Windows and doors are a different colour,
+  // so they stop short of the neighbouring wall and sit a hair thinner: no two faces share a plane.
+  const inset = wall.kind === "wall" ? 0 : WALL_THICKNESS + OPENING_GAP;
+  const alongX = wall.from.z === wall.to.z;
+  const width = Math.max(rect.maxX - rect.minX - (alongX ? inset : OPENING_GAP), OPENING_GAP);
+  const depth = Math.max(rect.maxZ - rect.minZ - (alongX ? OPENING_GAP : inset), OPENING_GAP);
   const bands = wall.cutaway === true ? curbBands(wall.kind, mats) : wallBands(wall.kind, mats);
   return bands.map((band) => {
     const height = band.to - band.from;

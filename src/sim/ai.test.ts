@@ -117,7 +117,11 @@ describe("ai", () => {
 
   it("stunned_ai_is_idle", () => {
     const stunned = withCat(quietGame(), "sister", { stunnedFor: 1 });
-    expect(think(stunned, "sister")).toEqual({ move: { x: 0, z: 0 }, swat: false });
+    expect(think(stunned, "sister")).toEqual({
+      move: { x: 0, z: 0 },
+      swat: false,
+      stealth: false,
+    });
   });
 
   it("ai_soak_full_round", () => {

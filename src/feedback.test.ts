@@ -62,6 +62,19 @@ describe("feedback for game events", () => {
     expect(theirs).toEqual({ toast: null, sounds: [] });
   });
 
+  it("stealth_is_announced_differently_to_each_cat", () => {
+    const mine = feedbackFor({ kind: "stealth", by: "sister" }, "sister", world);
+    expect(mine.toast).toBe("Stealth!");
+    const theirs = feedbackFor({ kind: "stealth", by: "sister" }, "brother", world);
+    expect(theirs.toast).toBe("Arwen vanished");
+  });
+
+  it("only_the_swatter_is_told_about_a_miss", () => {
+    const miss = { kind: "swat_missed", by: "brother" } as const;
+    expect(feedbackFor(miss, "brother", world).toast).toBe("Missed!");
+    expect(feedbackFor(miss, "sister", world).toast).toBeNull();
+  });
+
   it("round_end_sound_follows_the_winner", () => {
     const sounds = (winner: "brother" | "sister" | "tie"): readonly string[] =>
       feedbackFor({ kind: "round_over", winner }, "sister", world).sounds;

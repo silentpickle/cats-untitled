@@ -50,6 +50,7 @@ function simSettings(root: Table): Settings {
   const cats = table(root, "cats");
   const swat = table(root, "swat");
   const hide = table(root, "hide");
+  const stealth = table(root, "stealth");
   const treats = table(root, "treats");
   const mischief = table(root, "mischief");
   return {
@@ -64,7 +65,12 @@ function simSettings(root: Table): Settings {
       range: num(swat, "range"),
       stunSeconds: num(swat, "stun_seconds"),
       cooldownSeconds: num(swat, "cooldown_seconds"),
+      missCooldownSeconds: num(swat, "miss_cooldown_seconds"),
       fleeSeconds: num(swat, "flee_seconds"),
+    },
+    stealth: {
+      seconds: num(stealth, "seconds"),
+      cooldownSeconds: num(stealth, "cooldown_seconds"),
     },
     hide: { pointsPerSecond: num(hide, "points_per_second"), teaseRange: num(hide, "tease_range") },
     treats: {

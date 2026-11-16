@@ -1,7 +1,7 @@
 import type { CatId, CatInput, CatState, GameEvent, GameState } from "./types";
 import { ZERO } from "./geometry";
 
-export const IDLE_INPUT: CatInput = { move: ZERO, swat: false };
+export const IDLE_INPUT: CatInput = { move: ZERO, swat: false, stealth: false };
 
 export function otherCat(id: CatId): CatId {
   return id === "brother" ? "sister" : "brother";

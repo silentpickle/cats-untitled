@@ -137,5 +137,7 @@ Known rough edges:
 - The brother's "long hair" is only a wider body; the stock model has no fur.
 - Balance between the two computer cats swings a lot with small setting changes (`src/balance.test.ts`
   only guards against a shutout).
+- Arwen's stealth (Space) lasts 3 seconds with a 9 second cooldown; Aragorn's swat hits anywhere in range
+  and can be retried 0.7 seconds after a miss. Both are set in `config.toml`.
 - The computer cat does not go after its mischief list; it only ticks items off by accident.
 - Sounds are synthesized and have not been tuned by ear.

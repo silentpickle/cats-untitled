@@ -4,6 +4,7 @@ import { applyMovement } from "./movement";
 import { effectiveInputs, tickTimers } from "./status";
 import { scoreHiding, updateHidden } from "./hide";
 import { applySwat } from "./swat";
+import { applyStealth } from "./stealth";
 import { updateCapture, updateNapping } from "./capture";
 import { scoreOwnedPoints } from "./scoring";
 import { pickUpTreats, tickTreats } from "./treats";
@@ -22,6 +23,7 @@ const RULES: readonly Rule[] = [
   applyMovement,
   tickTimers,
   updateHidden,
+  applyStealth,
   applySwat,
   updateNapping,
   updateCapture,

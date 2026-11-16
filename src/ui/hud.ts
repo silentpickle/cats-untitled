@@ -1,4 +1,5 @@
 import type { CatId, GameState } from "../sim/types";
+import type { AbilityStatus } from "./ability";
 import { element } from "./dom";
 
 const SECONDS_PER_MINUTE = 60;
@@ -19,6 +20,7 @@ export class Hud {
   private readonly points = element("points", HTMLElement);
   private readonly toast = element("toast", HTMLElement);
   private readonly hint = element("hint", HTMLElement);
+  private readonly ability = element("ability", HTMLElement);
   private readonly scores: Record<CatId, HTMLElement> = {
     brother: element("score-brother", HTMLElement),
     sister: element("score-sister", HTMLElement),
@@ -30,6 +32,7 @@ export class Hud {
     this.root.hidden = false;
     this.hint.hidden = false;
     this.hint.textContent = hint;
+    this.ability.hidden = false;
     for (const cat of Object.keys(this.scores)) {
       this.scores[cat as CatId].parentElement?.classList.toggle("you", cat === player);
     }
@@ -45,6 +48,7 @@ export class Hud {
   hide(): void {
     this.root.hidden = true;
     this.hint.hidden = true;
+    this.ability.hidden = true;
   }
 
   update(state: GameState): void {
@@ -57,6 +61,11 @@ export class Hud {
         dot.className = point.owner ?? "";
       }
     });
+  }
+
+  showAbility(status: AbilityStatus): void {
+    this.ability.textContent = status.text;
+    this.ability.classList.toggle("ready", status.ready);
   }
 
   say(message: string): void {
