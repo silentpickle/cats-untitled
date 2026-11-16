@@ -1,0 +1,219 @@
+:root {
+  --brother: #ffa63d;
+  --sister: #5fd0ff;
+  --ink: #fdf8ee;
+  --panel: rgba(28, 26, 34, 0.82);
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #2b2a33;
+  color: var(--ink);
+  font-family: ui-rounded, "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[hidden] {
+  display: none !important;
+}
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#hud {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 8px 18px;
+  background: var(--panel);
+  border-radius: 16px;
+}
+.score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 78px;
+}
+.score .who {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.score b {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+.score.brother {
+  color: var(--brother);
+}
+.score.sister {
+  color: var(--sister);
+}
+.score.you .who::after {
+  content: " (you)";
+}
+.middle {
+  text-align: center;
+}
+#timer {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+#points {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 4px;
+}
+#points i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.9;
+}
+#points i.brother {
+  background: var(--brother);
+}
+#points i.sister {
+  background: var(--sister);
+}
+#toast {
+  position: fixed;
+  top: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-size: 15px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+#toast.show {
+  opacity: 1;
+}
+#hint {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  font-size: 14px;
+}
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+  text-align: center;
+  background: rgba(20, 18, 26, 0.72);
+  z-index: 10;
+}
+@media (pointer: coarse) {
+  #hint,
+  .screen .keys {
+    display: none;
+  }
+}
+.screen h1 {
+  margin: 0;
+  font-size: clamp(32px, 7vw, 56px);
+}
+.screen p {
+  margin: 0;
+  max-width: 520px;
+  font-size: 17px;
+}
+.screen .keys {
+  font-size: 14px;
+  opacity: 0.8;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+}
+button {
+  font: inherit;
+  color: #1c1a22;
+  border: 0;
+  border-radius: 16px;
+  padding: 14px 20px;
+  cursor: pointer;
+  background: var(--ink);
+}
+.choices button {
+  width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.choices button b {
+  font-size: 24px;
+}
+.choices button span {
+  font-size: 14px;
+}
+button.brother {
+  background: var(--brother);
+}
+button.sister {
+  background: var(--sister);
+}
+#touch {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 190px;
+  pointer-events: none;
+}
+#stick {
+  position: absolute;
+  left: 26px;
+  bottom: 26px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: auto;
+}
+#knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+}
+#swat-button {
+  position: absolute;
+  right: 30px;
+  bottom: 48px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--brother);
+  font-weight: 700;
+  pointer-events: auto;
+}

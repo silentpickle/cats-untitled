@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>Cats Untitled</title>
+    <link rel="stylesheet" href="/src/ui/style.css" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+
+    <div id="hud" hidden>
+      <div class="score brother"><span class="who">Brother</span><b id="score-brother">0</b></div>
+      <div class="middle">
+        <div id="timer">3:00</div>
+        <div id="points"></div>
+      </div>
+      <div class="score sister"><span class="who">Sister</span><b id="score-sister">0</b></div>
+    </div>
+    <div id="toast"></div>
+    <div id="hint" hidden></div>
+
+    <div id="touch" hidden>
+      <div id="stick"><div id="knob"></div></div>
+      <button id="swat-button" type="button">Swat</button>
+    </div>
+
+    <div id="select" class="screen">
+      <h1>Cats Untitled</h1>
+      <p>Nap on the glowing spots to claim them. Most points when the timer runs out wins.</p>
+      <div class="choices">
+        <button type="button" data-cat="brother" class="brother">
+          <b>Brother</b>
+          <span>Big, slow, full of swagger. Claims spots fast and swats his sister away.</span>
+        </button>
+        <button type="button" data-cat="sister" class="sister">
+          <b>Sister</b>
+          <span>Quick and shy. Hides under tables, sneaks treats, runs rings around him.</span>
+        </button>
+      </div>
+      <p class="keys">Move: WASD or arrow keys. Brother swats with Space.</p>
+    </div>
+
+    <div id="result" class="screen" hidden>
+      <h1 id="result-title"></h1>
+      <p id="result-detail"></p>
+      <button type="button" id="again">Play again</button>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+dist
+node_modules
+pnpm-lock.yaml
+assets
+public
+cats_untitled_house

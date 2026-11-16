@@ -1,0 +1,45 @@
+# Settings only. No secrets: those live in secrets.env.
+
+[round]
+duration_seconds = 180
+
+[capture]
+# Seconds of uncontested sitting to take a free point, before the cat's own multiplier.
+seconds_to_capture = 4.0
+points_per_second = 1.0
+radius = 0.6
+
+[cats.brother]
+speed = 1.2
+scale = 1.25
+capture_multiplier = 1.4
+radius = 0.28
+
+[cats.sister]
+speed = 3.0
+scale = 0.95
+capture_multiplier = 1.0
+radius = 0.2
+
+[swat]
+range = 0.9
+stun_seconds = 1.0
+cooldown_seconds = 7.0
+flee_seconds = 1.5
+
+[hide]
+# Sister scores this per second while hidden within range of her brother.
+points_per_second = 0.5
+tease_range = 3.0
+
+[treats]
+points = 5
+respawn_seconds = 20.0
+pickup_radius = 0.5
+
+[camera]
+height = 9.0
+distance = 7.0
+follow_lerp = 4.0
+
+[secrets]
