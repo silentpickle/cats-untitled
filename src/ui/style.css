@@ -13,6 +13,7 @@ body {
   color: var(--ink);
   font-family: ui-rounded, "Avenir Next", "Segoe UI", system-ui, sans-serif;
   touch-action: none;
+  -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -134,6 +135,9 @@ body {
     display: none;
   }
 }
+.screen .taps {
+  font-size: 15px;
+}
 .screen h1 {
   margin: 0;
   font-size: clamp(32px, 7vw, 56px);
@@ -180,38 +184,15 @@ button.brother {
 button.sister {
   background: var(--sister);
 }
-#touch {
-  position: fixed;
-  inset: auto 0 0 0;
-  height: 190px;
-  pointer-events: none;
-}
-#stick {
-  position: absolute;
-  left: 26px;
-  bottom: 26px;
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  pointer-events: auto;
-}
-#knob {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7);
-}
 #swat-button {
-  position: absolute;
-  right: 30px;
-  bottom: 48px;
-  width: 92px;
-  height: 92px;
+  position: fixed;
+  right: calc(22px + env(safe-area-inset-right));
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  width: 96px;
+  height: 96px;
+  font-size: 17px;
+  z-index: 5;
+  -webkit-tap-highlight-color: transparent;
   border-radius: 50%;
   background: var(--brother);
   font-weight: 700;
@@ -239,7 +220,7 @@ button.sister {
 }
 @media (pointer: coarse) {
   #ability {
-    bottom: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
   }
 }
 #mischief {
@@ -252,15 +233,22 @@ button.sister {
   border-radius: 14px;
   font-size: 13px;
 }
-#mischief h2 {
-  margin: 0 0 4px;
+#mischief-toggle {
+  display: block;
+  margin: 0;
+  padding: 0;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.8;
+  color: var(--ink);
+  background: none;
+  border-radius: 0;
+}
+#mischief.collapsed ul {
+  display: none;
 }
 #mischief ul {
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -298,31 +286,18 @@ button.sister {
   z-index: 11;
 }
 @media (max-width: 700px) {
-  #ability {
-    position: fixed;
-    bottom: 52px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 6px 16px;
-    border-radius: 14px;
-    background: var(--panel);
-    font-size: 15px;
-    font-weight: 700;
-    opacity: 0.65;
+  #hud {
+    top: calc(10px + env(safe-area-inset-top));
   }
-  #ability.ready {
-    opacity: 1;
-    color: #1c1a22;
-    background: var(--ink);
-  }
-  @media (pointer: coarse) {
-    #ability {
-      bottom: 14px;
-    }
+  #mischief,
+  #mute {
+    top: calc(84px + env(safe-area-inset-top));
   }
   #mischief {
-    top: 78px;
     font-size: 12px;
-    max-width: 170px;
+    max-width: 190px;
+  }
+  #toast {
+    top: calc(128px + env(safe-area-inset-top));
   }
 }

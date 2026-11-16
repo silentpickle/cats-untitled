@@ -15,3 +15,5 @@ export { isHidden } from "./hide";
 export { isNapping } from "./capture";
 export { winnerOf } from "./round";
 export { headingOf } from "./geometry";
+export type { WalkGoal } from "./walkTo";
+export { WALK_ARRIVE_METRES, planWalk, walkInput } from "./walkTo";

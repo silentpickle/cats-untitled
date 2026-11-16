@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Cats Untitled</title>
     <link rel="stylesheet" href="/src/ui/style.css" />
@@ -21,7 +21,7 @@
       <div class="score sister"><span class="who">Arwen</span><b id="score-sister">0</b></div>
     </div>
     <div id="mischief" hidden>
-      <h2>Mischief</h2>
+      <button id="mischief-toggle" type="button" aria-expanded="true">Mischief</button>
       <ul id="mischief-items"></ul>
     </div>
     <button id="mute" type="button" aria-pressed="false">Sound on</button>
@@ -29,10 +29,7 @@
     <div id="hint" hidden></div>
     <div id="ability" hidden></div>
 
-    <div id="touch" hidden>
-      <div id="stick"><div id="knob"></div></div>
-      <button id="swat-button" type="button">Swat</button>
-    </div>
+    <button id="swat-button" type="button" hidden>Swat</button>
 
     <div id="select" class="screen">
       <h1>Cats Untitled</h1>
@@ -49,6 +46,7 @@
           >
         </button>
       </div>
+      <p class="taps">Tap or click where you want your cat to go.</p>
       <p class="keys">Move: WASD or arrow keys. Space: Aragorn swats, Arwen goes unseen.</p>
     </div>
 

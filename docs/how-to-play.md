@@ -17,11 +17,15 @@ Every number on this page comes from `config.toml` and can be changed there.
 
 ## Controls
 
-| Action  | Keyboard            | Touch                      |
-| ------- | ------------------- | -------------------------- |
-| Move    | WASD or arrow keys  | Thumb stick, bottom left   |
-| Ability | Space or E          | Round button, bottom right |
-| Sound   | Button at top right | Same                       |
+| Action  | Keyboard                                 | Touch                            |
+| ------- | ---------------------------------------- | -------------------------------- |
+| Move    | WASD or arrow keys, or click where to go | Tap where you want the cat to go |
+| Ability | Space or E                               | Round button, bottom right       |
+| Sound   | Button at top right                      | Same                             |
+
+Tapping or clicking a spot sends your cat there by the shortest route around the furniture. Tap a ring
+to go and sit in it. Pressing a movement key cancels the walk. On an iPhone the game works in either
+orientation; landscape shows more of the house. The phone's silent switch also silences the game.
 
 ## Scoring
 

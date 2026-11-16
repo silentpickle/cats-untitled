@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { NapPointPlacement } from "../house/types";
-import type { CatId, GameState, TreatSpawnDef } from "../sim/types";
+import type { CatId, GameState, TreatSpawnDef, Vec2 } from "../sim/types";
 
 export const CAT_COLORS: Record<CatId, number> = { brother: 0xffa63d, sister: 0x5fd0ff };
 const NEUTRAL = 0xffffff;
@@ -16,6 +16,15 @@ const RING = {
 const TREAT = { size: 0.13, height: 0.3, color: 0xffd447, spin: 2.5, bob: 0.05, bobRate: 3 };
 const HALF = 0.5;
 const FLAT = -Math.PI * HALF;
+const GOAL = {
+  inner: 0.12,
+  outer: 0.2,
+  lift: 0.04,
+  color: 0xffffff,
+  opacity: 0.9,
+  pulse: 0.2,
+  rate: 6,
+};
 const MIN_FILL = 0.001;
 
 interface PointMarker {
@@ -46,6 +55,10 @@ export class Markers {
   private readonly points = new Map<string, PointMarker>();
   private readonly treats = new Map<string, THREE.Mesh>();
   private clock = 0;
+  private readonly goal = new THREE.Mesh(
+    new THREE.RingGeometry(GOAL.inner, GOAL.outer, RING.segments),
+    new THREE.MeshBasicMaterial({ color: GOAL.color, transparent: true, opacity: GOAL.opacity }),
+  );
 
   constructor(napPoints: readonly NapPointPlacement[], treatSpawns: readonly TreatSpawnDef[]) {
     for (const point of napPoints) {
@@ -53,6 +66,9 @@ export class Markers {
       this.points.set(point.id, marker);
       this.object.add(marker.ring, marker.fill);
     }
+    this.goal.rotation.x = FLAT;
+    this.goal.visible = false;
+    this.object.add(this.goal);
     const treatMaterial = new THREE.MeshStandardMaterial({
       color: TREAT.color,
       emissive: TREAT.color,
@@ -66,8 +82,17 @@ export class Markers {
     }
   }
 
+  /** Shows where the player tapped, at the height of whatever is there; null hides it. */
+  setGoal(pos: Vec2 | null, height: number): void {
+    this.goal.visible = pos !== null;
+    if (pos !== null) {
+      this.goal.position.set(pos.x, height + GOAL.lift, pos.z);
+    }
+  }
+
   update(state: GameState, dt: number): void {
     this.clock += dt;
+    this.goal.scale.setScalar(1 + Math.sin(this.clock * GOAL.rate) * GOAL.pulse);
     for (const point of state.points) {
       const marker = this.points.get(point.id);
       if (marker === undefined) {

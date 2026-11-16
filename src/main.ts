@@ -5,14 +5,25 @@ import { MAIN_FLOOR } from "./house/mainFloor";
 import { platformHeightAt, toWorld } from "./house/toWorld";
 import type { HouseFloor } from "./house/types";
 import { Keyboard } from "./input/keyboard";
-import { TouchControls } from "./input/touch";
+import { AbilityButton, TapInput } from "./input/pointer";
+import { pickGoal } from "./input/tapGoal";
 import { loadCatViews, type CatView } from "./render/catView";
 import { FollowCamera } from "./render/followCamera";
+import { sightLine } from "./render/groundPicker";
 import { buildHouse } from "./render/houseView";
 import { KnockableViews } from "./render/knockableViews";
 import { Markers } from "./render/markers";
 import { createStage, type Stage } from "./render/stage";
-import { aiInput, buildNavGrid, createGame, step, type NavGrid } from "./sim";
+import {
+  aiInput,
+  buildNavGrid,
+  createGame,
+  planWalk,
+  step,
+  walkInput,
+  type NavGrid,
+  type WalkGoal,
+} from "./sim";
 import {
   CAT_IDS,
   type CatId,
@@ -36,27 +47,18 @@ const MS_PER_SECOND = 1000;
 const HALF = 0.5;
 
 const HINTS: Record<CatId, string> = {
-  brother: "Sit still on a ring to claim it. Space swats Arwen if she is close.",
-  sister: "Sit still on a ring to claim it. Space makes you unseen for 3 seconds.",
+  brother: "Click or use WASD to move. Sit still on a ring to claim it. Space swats Arwen.",
+  sister:
+    "Click or use WASD to move. Sit still on a ring to claim it. Space: unseen for 3 seconds.",
 };
 
 interface Controls {
   readonly keyboard: Keyboard;
-  readonly touch: TouchControls;
+  readonly ability: AbilityButton;
 }
 
 function otherCat(cat: CatId): CatId {
   return cat === "brother" ? "sister" : "brother";
-}
-
-function playerInput(controls: Controls): CatInput {
-  const keys = controls.keyboard.move();
-  const stick = controls.touch.move();
-  return {
-    move: { x: keys.x + stick.x, z: keys.z + stick.z },
-    swat: controls.keyboard.swat() || controls.touch.swat(),
-    stealth: controls.keyboard.swat() || controls.touch.swat(),
-  };
 }
 
 /** Owns one running house: the rules state, the things drawn, and the loop that joins them. */
@@ -65,6 +67,7 @@ class Game {
   private player: CatId | null = null;
   private leftover = 0;
   private lastTime = 0;
+  private goal: WalkGoal | null = null;
   private readonly navs: Record<CatId, NavGrid>;
   private readonly followCamera: FollowCamera;
   private readonly hud = new Hud();
@@ -115,9 +118,8 @@ class Game {
     this.mischiefList.show(cat, this.world.mischief);
     this.sounds.unlock();
     this.sounds.play(cat === "brother" ? "meow_brother" : "meow_sister");
-    const button = element("swat-button", HTMLElement);
-    button.textContent = cat === "brother" ? "Swat" : "Stealth";
-    button.className = cat;
+    this.controls.ability.label(cat === "brother" ? "Swat" : "Stealth", cat);
+    this.clearGoal();
   }
 
   private reset(): void {
@@ -126,6 +128,51 @@ class Game {
     this.hud.hide();
     this.mischiefList.hide();
     this.sounds.setPurring(false);
+    this.controls.ability.hide();
+    this.clearGoal();
+  }
+
+  /** The player tapped or clicked the stage: walk there. */
+  tap(clientX: number, clientY: number): void {
+    if (this.player === null || this.state.phase !== "playing") {
+      return;
+    }
+    const line = sightLine(this.stage.camera, this.stage.renderer.domElement, clientX, clientY);
+    const spot = pickGoal(line, this.floor.napPoints);
+    if (spot === null) {
+      return;
+    }
+    this.goal = planWalk(this.navs[this.player], spot) ?? null;
+    const target = this.goal?.target ?? null;
+    const height = target === null ? 0 : platformHeightAt(this.floor, target.x, target.z);
+    this.markers.setGoal(target, height);
+  }
+
+  private clearGoal(): void {
+    this.goal = null;
+    this.markers.setGoal(null, 0);
+  }
+
+  /** Keys win over a tapped goal and cancel it; otherwise the cat follows its route until it arrives. */
+  private playerMove(player: CatId): Vec2 {
+    const keys = this.controls.keyboard.move();
+    if (keys.x !== 0 || keys.z !== 0) {
+      this.clearGoal();
+      return keys;
+    }
+    if (this.goal === null) {
+      return keys;
+    }
+    const move = walkInput(this.navs[player], this.goal, this.state.cats[player].pos);
+    if (move.x === 0 && move.z === 0) {
+      this.clearGoal();
+    }
+    return move;
+  }
+
+  private playerInput(player: CatId): CatInput {
+    const ability = this.controls.keyboard.swat() || this.controls.ability.takePress();
+    return { move: this.playerMove(player), swat: ability, stealth: ability };
   }
 
   private wireMute(): void {
@@ -168,7 +215,7 @@ class Game {
     this.leftover += dt;
     while (this.leftover >= SIM_STEP) {
       this.leftover -= SIM_STEP;
-      this.stepOnce(player, playerInput(this.controls));
+      this.stepOnce(player, this.playerInput(player));
     }
   }
 
@@ -250,15 +297,12 @@ async function boot(): Promise<Game> {
     cats.sister.object,
   );
 
-  const touch = new TouchControls(
-    element("stick", HTMLElement),
-    element("knob", HTMLElement),
-    element("swat-button", HTMLElement),
-  );
-  element("touch", HTMLElement).hidden = !window.matchMedia("(pointer: coarse)").matches;
   const game = new Game(settings, floor, world, stage, cats, markers, knockables, {
     keyboard: new Keyboard(window),
-    touch,
+    ability: new AbilityButton(element("swat-button", HTMLElement)),
+  });
+  new TapInput(stage.renderer.domElement, (x, y) => {
+    game.tap(x, y);
   });
   game.start();
   return game;

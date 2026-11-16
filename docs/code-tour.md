@@ -23,7 +23,7 @@ takes a state and the two cats' inputs and returns the next state. Everything el
 | `src/sim/`    | The rules and the computer opponent. Pure functions, fully unit tested.                |
 | `src/house/`  | The house as data, and `toWorld.ts`, which turns it into what the rules need.          |
 | `src/render/` | Three.js: the stage, the house, the cats, the rings, the knockable things, the camera. |
-| `src/input/`  | Keyboard and the on-screen thumb stick.                                                |
+| `src/input/`  | Keyboard, tap-to-move, and the on-screen ability button.                               |
 | `src/ui/`     | The HTML overlay: scoreboard, mischief list, ability pill, select and result screens.  |
 | `src/audio/`  | Sounds synthesized with Web Audio. No audio files.                                     |
 | `src/main.ts` | Loads everything and runs the frame loop.                                              |
