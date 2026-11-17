@@ -82,11 +82,11 @@ const OUTSIDE_WALLS: readonly WallDef[] = [
 
 const INSIDE_WALLS: readonly WallDef[] = [
   // Kitchen: the pillar wall behind the island, the walkthrough, then the fridge wall.
-  wall(3.1, 3.4, 3.1, 4.8),
+  wall(3.1, 3.4, 3.1, 4.5),
   curb(3.1, 5.7, 3.1, 9.4),
   // Kitchen to laundry, with the laundry door left open.
-  curb(0, 7, 1.2, 7),
-  curb(2.1, 7, 3.1, 7),
+  curb(0, 7, 1.1, 7),
+  curb(2.2, 7, 3.1, 7),
   // Living room to the bedroom wing; the gap is the hall.
   curb(7, 0, 7, 3.5),
   curb(7, 5.5, 7, 6.3),
@@ -359,13 +359,13 @@ const ISLAND: readonly FurnitureDef[] = [
   {
     id: "island_return",
     model: null,
-    pos: { x: 2.76, z: 4.45 },
-    size: { w: 0.52, d: 0.7, h: 0.9 },
+    pos: { x: 2.76, z: 4.35 },
+    size: { w: 0.52, d: 0.5, h: 0.9 },
     turns: FACES_SOUTH,
     blocks: "both",
     color: COLORS.oak,
   },
-  granite("island_return_top", 2.75, 4.45, 0.56, 0.72, 0.9),
+  granite("island_return_top", 2.75, 4.35, 0.56, 0.52, 0.9),
   {
     id: "pet_bed",
     model: null,

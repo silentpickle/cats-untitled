@@ -12,7 +12,7 @@ Every number on this page comes from `config.toml` and can be changed there.
 | ------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Look          | Big and round, swaggers, naps flopped on his side | Smaller, a tiny white fleck on her chest, naps in a loaf                           |
 | Speed         | 2.0 metres a second                               | 3.0 metres a second                                                                |
-| Claims a spot | in about 2.0 seconds                              | in about 5.7 seconds                                                               |
+| Claims a spot | in about 3.1 seconds                              | in about 3.1 seconds                                                               |
 | Ability       | **Swat**                                          | **Stealth**                                                                        |
 | Fits under    | nothing                                           | the coffee table, the dining table, the foyer bench, the closet shelf and the desk |
 

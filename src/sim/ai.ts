@@ -27,6 +27,8 @@ const BROTHER_SISTER_OWNED_BONUS_SECONDS = 3;
 const BROTHER_SISTER_CAPTURING_BONUS_SECONDS = 5;
 /** Brother: swat when she is within this fraction of swat range (both cats move before it lands). */
 const BROTHER_SWAT_REACH_FRACTION = 0.9;
+/** Brother: go for a treat when it is at most this many metres' walk away (he is slow). */
+const BROTHER_TREAT_CHASE_METRES = 1.5;
 /** Sister: go for a treat when it is at most this many metres' walk away. */
 const SISTER_TREAT_CHASE_METRES = 3;
 /** Sister: the brother is a threat within this many metres. */
@@ -154,10 +156,19 @@ function shouldSwat(view: AiView): boolean {
   return distance(me.pos, other.pos) <= settings.swat.range * BROTHER_SWAT_REACH_FRACTION;
 }
 
-function brotherInput(view: AiView): CatInput {
+/** Keep filling a point he is sitting on; else grab a treat right beside him; else walk on to the next point. */
+function brotherMove(view: AiView): Vec2 {
+  const held = heldPoint(view);
+  if (held !== undefined) return moveToNap(view, held);
+  const treat = treatWithin(view, BROTHER_TREAT_CHASE_METRES);
+  if (treat !== undefined) return treat;
   const target = brotherTarget(view);
+  return target === undefined ? ZERO : moveToNap(view, target);
+}
+
+function brotherInput(view: AiView): CatInput {
   return {
-    move: target === undefined ? ZERO : moveToNap(view, target),
+    move: brotherMove(view),
     swat: shouldSwat(view),
     stealth: false,
   };
@@ -224,15 +235,28 @@ const keepCapturing: Plan = (view) => {
   return moveToNap(view, held);
 };
 
-const chaseTreat: Plan = (view) => {
+/** The grid lets this cat get within pickup range of the treat (the brother cannot fit under the table). */
+function canReachTreat(view: AiView, id: string, pos: Vec2): boolean {
+  const field = view.nav.toTreat.get(id);
+  if (field === undefined) return true;
+  if (field.goalCell === NOT_FOUND) return false;
+  return distance(cellCenter(view.nav, field.goalCell), pos) <= view.settings.treats.pickupRadius;
+}
+
+/** Walk toward the nearest treat that is out, reachable, and at most `metres` of walking away. */
+function treatWithin(view: AiView, metres: number): Vec2 | undefined {
   const out = view.world.treatSpawns.filter(
-    (t) => view.state.treats.find((s) => s.id === t.id)?.available === true,
+    (t) =>
+      view.state.treats.find((s) => s.id === t.id)?.available === true &&
+      canReachTreat(view, t.id, t.pos),
   );
   const walk = (pos: Vec2, id: string) => walkDistance(view, view.nav.toTreat.get(id), pos);
-  const near = out.filter((t) => walk(t.pos, t.id) <= SISTER_TREAT_CHASE_METRES);
+  const near = out.filter((t) => walk(t.pos, t.id) <= metres);
   const treat = bestBy(near, (t) => walk(t.pos, t.id));
   return treat === undefined ? undefined : walkTo(view, view.nav.toTreat.get(treat.id), treat.pos);
-};
+}
+
+const chaseTreat: Plan = (view) => treatWithin(view, SISTER_TREAT_CHASE_METRES);
 
 /** Her walk to the point, less how far it is from her brother. */
 function sisterCost(view: AiView, def: NapPointDef): number {

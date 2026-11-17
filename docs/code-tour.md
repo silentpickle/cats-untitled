@@ -99,8 +99,8 @@ thing, so a commit that fails any of them is refused.
 - **Lint is strict on purpose:** functions stay under complexity 15, nesting stays within two levels, and
   numbers get names. The house layout file is the one exception for numbers, because it is a table of
   coordinates.
-- **`src/balance.test.ts`** plays a whole round of computer against computer on the real house and fails if
-  one cat is shut out. Run it after changing speeds or capture rates.
+- **`src/balance.test.ts`** plays six rounds of computer against computer on the real house, from slightly different openings, and fails if
+  one cat pulls ahead. Run it after changing speeds, capture rates or the layout.
 
 ## Play-testing by script
 

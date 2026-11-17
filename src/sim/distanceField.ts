@@ -60,14 +60,20 @@ function reachable(field: DistanceField, cells: readonly number[]): number[] {
 
 /**
  * The reachable cell to path from when standing at `pos`. Usually the cell underfoot; a cat pressed
- * against furniture stands in a cell too close to it to be walkable, so look nearby, then everywhere.
+ * against furniture stands in a cell too close to it to be walkable, so use the walkable cell nearest
+ * it. If that cell is cut off from the target the cat has no way there (NOT_FOUND): jumping to a
+ * reachable cell on the far side of a wall would send it into furniture it cannot get past. Only a cat
+ * with no walkable cell around it at all (placed inside furniture) searches the whole floor.
  */
 export function entryCell(grid: WalkGrid, field: DistanceField, pos: Vec2): number {
   const here = cellAt(grid, pos);
   if (Number.isFinite(fieldAt(field, here))) return here;
-  const near = reachable(field, cellsAround(grid, here, REJOIN_SEARCH_RINGS));
-  if (near.length > 0) return nearestCell(grid, pos, near);
-  return nearestCell(grid, pos, reachable(field, walkableCells(grid)));
+  const open = cellsAround(grid, here, REJOIN_SEARCH_RINGS).filter(
+    (i) => grid.walkable[i] === true,
+  );
+  if (open.length === 0) return nearestCell(grid, pos, reachable(field, walkableCells(grid)));
+  const nearest = nearestCell(grid, pos, open);
+  return Number.isFinite(fieldAt(field, nearest)) ? nearest : NOT_FOUND;
 }
 
 /** Walking distance in metres from `pos` to the field's goal; Infinity if it cannot be reached. */
