@@ -13,6 +13,9 @@ export interface NetSettings {
   readonly roomCodeLength: number;
   readonly snapshotsPerSecond: number;
   readonly inputsPerSecond: number;
+  readonly stunServers: readonly string[];
+  readonly networkCheckSeconds: number;
+  readonly slowJoinSeconds: number;
 }
 
 export interface AppSettings {
@@ -51,6 +54,16 @@ function text(parent: Table, key: string): string {
   return value;
 }
 
+function textList(parent: Table, key: string): string[] {
+  const value = parent[key];
+  const items: readonly unknown[] = Array.isArray(value) ? value : [];
+  const strings = items.filter((item): item is string => typeof item === "string" && item !== "");
+  if (!Array.isArray(value) || strings.length !== items.length) {
+    throw new Error(`config.toml: ${key} must be a list of non-empty strings`);
+  }
+  return strings;
+}
+
 function netSettings(root: Table): NetSettings {
   const net = table(root, "net");
   return {
@@ -58,6 +71,9 @@ function netSettings(root: Table): NetSettings {
     roomCodeLength: num(net, "room_code_length"),
     snapshotsPerSecond: num(net, "snapshots_per_second"),
     inputsPerSecond: num(net, "inputs_per_second"),
+    stunServers: textList(net, "stun_servers"),
+    networkCheckSeconds: num(net, "network_check_seconds"),
+    slowJoinSeconds: num(net, "slow_join_seconds"),
   };
 }
 

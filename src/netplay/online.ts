@@ -14,6 +14,7 @@ import { catName } from "../ui/screens";
 import { GuestMatch } from "./guestMatch";
 import { HostMatch, remoteRival } from "./hostMatch";
 import type { Lobby } from "./lobby";
+import type { Troubleshooter } from "./troubleshooter";
 import { PROTOCOL_VERSION, decodeWelcome, type CatsGuest, type CatsHost } from "./protocol";
 import { decodeCatInput, decodeGameState } from "./wire";
 
@@ -57,10 +58,12 @@ export class Online {
     private readonly joiner: JoinRoom,
     private readonly lobby: Lobby,
     private readonly hooks: GameHooks,
+    private readonly help: Troubleshooter,
   ) {}
 
   /** Leaves any open room. Safe to call when none is open. */
   leave(): void {
+    this.help.stop();
     this.close();
     this.close = () => undefined;
   }
@@ -68,8 +71,9 @@ export class Online {
   host(cat: CatId): void {
     this.leave();
     const code = makeRoomCode(this.net.roomCodeLength);
+    const room = this.joiner(code);
     const link: CatsHost = new HostSession({
-      room: this.joiner(code),
+      room,
       protocol: PROTOCOL_VERSION,
       welcome: { cat: otherCat(cat) },
       decodeInput: decodeCatInput,
@@ -79,6 +83,7 @@ export class Online {
     };
     this.lobby.showRoom(code, roomLink(window.location.href, code));
     this.lobby.say(`Waiting for your friend to join as ${catName(otherCat(cat))}…`);
+    this.help.follow(room, "host");
     link.onStatus((status) => {
       this.onHostStatus(status, cat, link);
     });
@@ -86,8 +91,9 @@ export class Online {
 
   join(code: string): void {
     this.leave();
+    const room = this.joiner(code);
     const link: CatsGuest = new GuestSession({
-      room: this.joiner(code),
+      room,
       protocol: PROTOCOL_VERSION,
       decodeState: decodeGameState,
       decodeWelcome,
@@ -96,6 +102,7 @@ export class Online {
       link.close();
     };
     this.lobby.say(GUEST_STATUS.waiting ?? "");
+    this.help.follow(room, "guest");
     link.onWelcome((welcome) => {
       this.startGuestRound(welcome.cat, link);
     });
@@ -119,6 +126,7 @@ export class Online {
     const fallback = computerRival(world, sim, navs, otherCat(cat));
     const local = new LocalMatch(world, sim, cat, remoteRival(link, fallback));
     const match = new HostMatch(local, link, this.net.snapshotsPerSecond);
+    this.help.stop();
     this.lobby.hide();
     this.hooks.startRound(cat, match, {
       canRestart: true,
@@ -133,6 +141,7 @@ export class Online {
 
   private startGuestRound(cat: CatId, link: CatsGuest): void {
     const match = new GuestMatch(link, this.hooks.idleState(), this.net.inputsPerSecond);
+    this.help.stop();
     this.lobby.hide();
     this.hooks.startRound(cat, match, {
       canRestart: false,

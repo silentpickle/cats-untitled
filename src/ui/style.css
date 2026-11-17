@@ -358,3 +358,25 @@ button.quiet {
   min-height: 1.4em;
   opacity: 0.9;
 }
+.lobby-help {
+  max-width: min(32rem, 100%);
+  text-align: left;
+}
+.lobby-help summary {
+  cursor: pointer;
+  text-align: center;
+  opacity: 0.85;
+}
+.lobby-help ul {
+  margin: 8px 0;
+  padding-left: 1.2em;
+}
+.lobby-help li + li {
+  margin-top: 6px;
+}
+.help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
