@@ -103,7 +103,6 @@ export class MemoryHub {
       },
     });
     return {
-      selfId: member.id,
       channel,
       onPeerJoin: (handler) => {
         member.joinHandler = handler;

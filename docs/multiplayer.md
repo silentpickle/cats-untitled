@@ -7,12 +7,13 @@ This document covers how it works, how it is built here, and how to lift it into
 
 ## The short version
 
-- **Library:** [Trystero](https://github.com/dmotz/trystero), pinned to `0.26.0`. MIT licence, free.
+- **Library:** [Trystero](https://github.com/dmotz/trystero), pinned to `0.27.0`. MIT licence, free.
 - **Matchmaking:** Trystero uses public Nostr relays to introduce the two browsers. We run nothing and need no
   account. The relays only see a hashed room id and connection details.
 - **Game traffic:** browser to browser over WebRTC. It never touches the relays once connected.
-- **Model:** host-authoritative. The host runs the game and sends snapshots; the guest sends its input and
-  draws what it is sent.
+- **Model:** host-authoritative. The host runs the game and sends snapshots; the guest sends its input.
+- **Smoothing:** the guest draws the other cat a little in the past, blended between snapshots, and moves
+  its own cat at once by running the host's movement rule locally (see [Hiding the lag](#hiding-the-lag)).
 - **Cost:** nothing. GitHub Pages hosts the page; Trystero and the relays are free.
 
 ## Trade-offs to know about
@@ -43,8 +44,8 @@ This document covers how it works, how it is built here, and how to lift it into
  status "connected", round starts                                           status "connected"
 
  every frame: run the rules
- 20×/s  state: {whole GameState, events since last} ─────────────────────►  decode, draw, play sounds
-                ◄───────────────────────────────────── input: {move, swat, stealth}  30×/s
+ 20×/s  state: {time, ack, state: whole GameState + events since last} ───►  buffer, blend, play sounds
+                ◄────────────────────────────────── input: {seq, input: {move, swat, stealth}}  30×/s
 ```
 
 The handshake is two messages so that a stray peer cannot take the seat: the host only accepts a peer that
@@ -57,8 +58,11 @@ Messages from anyone but the partner are ignored on both sides.
 src/net/          Game-agnostic. Nothing here imports the game. Copy this folder to reuse it.
   room.ts           NetRoom / NetChannel / JoinRoom: the transport seam.
   trysteroRoom.ts   The only file that imports Trystero.
+  trysteroErrors.ts Trystero's room error codes -> what the player is told.
   memoryRoom.ts     An in-page NetRoom for tests (MemoryHub, settle).
-  session.ts        HostSession / GuestSession: handshake, seats, status, decoding.
+  session.ts        HostSession / GuestSession: handshake, seats, status, decoding, input seq and acks.
+  snapshotBuffer.ts SnapshotBuffer: plays snapshots back a little late, with its own smooth clock.
+  lag.ts            withLag / lagFromUrl: fake latency and jitter for testing on one computer.
   roomCode.ts       Codes, normalising typed codes, invite links.
   rate.ts           SendRate: "send N times a second, whatever the frame rate".
   diagnostics.ts    Troubleshooting, pure: parse ICE candidates, spot strict NATs, advice, reports.
@@ -69,7 +73,9 @@ src/netplay/      This game's glue. Knows about cats; uses src/net.
   protocol.ts       PROTOCOL_VERSION, the Welcome message (which cat the guest plays).
   wire.ts           Decoders for GameState and CatInput: everything off the network is checked.
   hostMatch.ts      Runs the round locally and sends snapshots; the guest's input drives the other cat.
-  guestMatch.ts     Shows snapshots and sends input; never runs the rules.
+  guestMatch.ts     Blends snapshots, predicts its own cat, sends input; never runs the other rules.
+  interpolate.ts    interpolateState: a GameState part-way between two snapshots.
+  predict.ts        OwnCatPredictor: the guest's own cat, moved at once and corrected toward the host.
   lobby.ts          The "Play with a friend" screen, including the "Trouble connecting?" panel.
   online.ts         Turns session status into rounds and messages.
   troubleshooter.ts Keeps the help panel current while a room waits for its second player.
@@ -90,7 +96,7 @@ servers, and the troubleshooting timings.
 1. **Copy `src/net/`** and add the dependency, pinned:
 
    ```bash
-   pnpm add -E trystero@0.26.0
+   pnpm add -E trystero@0.27.0
    ```
 
 2. **Pick an app id** that is unique to your game. It keeps your rooms apart from every other Trystero app
@@ -122,7 +128,8 @@ servers, and the troubleshooting timings.
    const snapshots = new SendRate(20);
    function frame(dt: number) {
      runGame(dt, { remote: host.latestInput() });
-     if (snapshots.due(dt)) host.sendState(currentState());
+     // A clock that keeps rising across rounds: the guest drops snapshots that are not newer.
+     if (snapshots.due(dt)) host.sendState(currentState(), performance.now() / 1000);
    }
    ```
 
@@ -139,7 +146,12 @@ servers, and the troubleshooting timings.
      decodeWelcome,
    });
    guest.onWelcome(({ seat }) => startGame(seat));
-   guest.onSnapshot((state) => draw(state));
+   // Push on arrival: the buffer measures jitter from arrival times.
+   const buffer = new SnapshotBuffer<MyState>({ delaySeconds: 0.1 });
+   guest.onSnapshot((state, { time, ack }) => {
+     buffer.push(time, state);
+     reconcileMyPrediction(ack, state); // optional: see "Hiding the lag"
+   });
    guest.onStatus((status) => {
      if (status === "full") showMessage("That room is full");
      if (status === "mismatch") showMessage("Reload the page to update");
@@ -148,7 +160,9 @@ servers, and the troubleshooting timings.
 
    const inputs = new SendRate(30);
    function frame(dt: number) {
-     if (inputs.due(dt)) guest.sendInput(readInput());
+     if (inputs.due(dt)) rememberPrediction(guest.sendInput(readInput())); // returns the input's seq
+     const bracket = buffer.sample(); // null until the first snapshot
+     if (bracket !== null) draw(blend(bracket.from, bracket.to, bracket.t));
    }
    ```
 
@@ -186,8 +200,62 @@ servers, and the troubleshooting timings.
   send instead of being read and dropped in between.
 - **Bump the protocol version** whenever the state, input or welcome shape changes. An old page and a new
   page then refuse each other with a clear message.
+- **Stamp snapshots with host time and inputs with a sequence number.** The guest can then play snapshots
+  back on a smooth clock, and knows which of its inputs a snapshot already includes.
 - **Keep the transport behind `NetRoom`.** Trystero can be replaced (another Trystero strategy, PeerJS, a
   WebSocket server) by writing one function that returns a `NetRoom`; nothing else changes.
+
+## Hiding the lag
+
+With about 100 ms each way, a guest that simply drew each snapshot saw two problems: everything hopped 20
+times a second (and in clumps, because a delayed packet holds back the ones behind it), and its own cat only
+moved after a round trip. Two standard fixes, both on the guest only:
+
+```
+guest frame
+  if an input is due: send it (seq n), remember where my cat was at seq n
+  my cat     = predicted: moved now by the input just sent, using the host's own movement rule (moveOneCat)
+  everything else = SnapshotBuffer.sample(): drawn ~0.1 s in the past, blended between the snapshots on
+                    either side (interpolateState)
+snapshot arrives {time, ack, state}
+  buffer.push(time, state); play its events now
+  compare where the host put my cat after input `ack` with where I had it then:
+    under prediction_dead_zone_metres  -> ignore (input timing noise)
+    over  prediction_snap_metres       -> jump (a swat, a new round)
+    in between                         -> blend in at prediction_blend_per_second
+  while the host says my cat is stunned or fleeing, follow the host instead of predicting
+```
+
+- **Interpolation delay.** `interpolation_delay_seconds` (0.1, two snapshots at 20 a second) is the base;
+  the buffer adds up to 0.25 s more when arrivals are uneven, and speeds its clock up or slows it down by at
+  most 10% to stay on target, so the picture never jumps back.
+- **Why a dead zone.** A snapshot that acks input `n` was taken after the host had used input `n` for up to
+  one snapshot interval, so even a perfect prediction is off by up to speed × (1/20 + 1/30) s, about 0.25 m
+  for Arwen. Smaller gaps are not real disagreements.
+- **The cost.** The other cat is shown about 0.3 s late at 200 ms latency (lag plus the delay), so a swat
+  lands on where Arwen was, not where she looks. Fine for a casual game; competitive games add lag
+  compensation on the host.
+- **Events play on arrival**, a little ahead of the blended picture. Nobody notices for sounds.
+
+Trystero 0.27 has no real-time features of its own (its `makeState` is for lobby-style shared values, at
+most 25 updates a second), and every message, ours included, goes over one reliable, ordered data channel.
+That is why a lost packet holds back later snapshots; the buffer's jitter allowance absorbs it. A lossy
+channel opened beside Trystero's would remove the hold-ups; it is not worth the risk for this game.
+
+### Testing with lag on one computer
+
+Add `?lag=200&jitter=40` to the page address. Everything that page sends is held back 200 ms plus up to 40
+ms, keeping order like a real connection. The invite link keeps the parameter, so the friend's page lags too:
+200 ms each way. The console says `net: simulating 200 ms lag, 40 ms jitter`.
+
+Measured this way (Trystero 0.27, real relays, guest page in an iframe so both pages stay visible):
+
+| What                                       | Result                                              |
+| ------------------------------------------ | --------------------------------------------------- |
+| Guest presses a key → its own cat moves    | 19 ms (the host sees it 236 ms later)               |
+| Guest's cat after letting go               | Same spot on both pages (0.000 m apart)             |
+| Host's cat as seen by the guest, 58 frames | No stalled frames; speed 2.73–3.15 m/s, median 3.01 |
+| Guest's round clock                        | 0.34 s behind the host's (lag + delay)              |
 
 ## Troubleshooting
 
@@ -198,7 +266,7 @@ do in plain words.
 | --------------------- | --------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- |
 | 1. Matchmaking        | No relay reachable (offline, VPN, ad blocker) | Counts open relay sockets every second (Trystero's `getRelaySockets`)        | Check the internet; try without a VPN or ad blocker   |
 | 2. Finding the friend | Wrong code, or the host's tab is hidden       | Still waiting after `slow_join_seconds`                                      | Check the code; keep the room screen in front         |
-| 3. Connecting         | The networks refuse a direct connection       | Trystero's `onJoinError`: "could not connect to peer … after exchanging SDP" | Found your friend, but the networks won't connect     |
+| 3. Connecting         | The networks refuse a direct connection       | Trystero's `room.onError` with code `peer-connect-failed`                    | Found your friend, but the networks won't connect     |
 | Network check         | WebRTC blocked by the browser or an extension | The check cannot start a WebRTC connection                                   | A privacy setting or extension is blocking it         |
 | Network check         | STUN blocked (no public address)              | No `srflx` candidate comes back                                              | Only someone on the same Wi-Fi can connect            |
 | Network check         | Strict (symmetric) NAT                        | More public ports than local sockets: the router changes the port per server | Works with most home networks, not another strict one |
@@ -225,7 +293,7 @@ browser: Mozilla/5.0 (iPhone; …)
 time: 2026-11-17T09:20:00.000Z
 relays open: 4 of 5
 waiting: 31 s
-trouble: unreachable (could not connect to peer … after exchanging SDP; configure TURN servers …)
+trouble: unreachable (peer-connect-failed: could not connect to peer …)
 webrtc: yes
 public address (stun): yes
 turn relay: no
@@ -268,9 +336,16 @@ tier's credentials are public.
 
 ## Upgrading Trystero
 
-Trystero is pre-1.0 and its API can change between minor versions. Only `src/net/trysteroRoom.ts` touches it. To upgrade: check the release notes, bump the pinned
-version, fix that one file, run `pnpm check`, then test two real tabs (below). Prefer a release that has been
-out for a couple of weeks.
+Trystero is pre-1.0 and its API can change between minor versions. Only `src/net/trysteroRoom.ts` and
+`trysteroErrors.ts` touch it. To upgrade: check the release notes and `MIGRATION.md`, bump the pinned
+version, fix those files, bump `PROTOCOL_VERSION` if the new version cannot talk to the old one, run
+`pnpm check`, then test two real tabs (below). Prefer a release that has been out for a couple of weeks.
+
+What 0.26 → 0.27 changed for us: `joinRoom` takes two arguments and errors come from `room.onError` as typed
+codes instead of text; `onPeerJoin`, `onPeerLeave` and an action's `onMessage` are methods that return an
+unsubscribe instead of properties; a send to a peer that has left rejects (we ignore `disconnected`);
+`selfId` is gone (we dropped it from `NetRoom`, nothing used it). 0.27 cannot talk to 0.26, which the
+protocol bump to 2 covers.
 
 ## Trying it locally
 
@@ -282,5 +357,6 @@ Open the page in two windows (side by side, so neither is a throttled background
 with a friend → Be Arwen**; in the other, open the invite link or type the code. Both windows still go through
 the public relays, so this needs an internet connection.
 
-In the browser console, `catsGame.snapshot()` shows each side's state. The guest's clock should match the
-host's to within a snapshot.
+In the browser console, `catsGame.snapshot()` shows each side's state. The guest's clock runs a little
+behind the host's: the playback delay plus any lag. Add `?lag=200` to feel a real connection (see
+[Testing with lag on one computer](#testing-with-lag-on-one-computer)).

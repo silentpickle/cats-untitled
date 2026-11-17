@@ -78,5 +78,14 @@ stun_servers = [
 # Troubleshooting: how long "Check my connection" listens, and when "still looking" advice appears.
 network_check_seconds = 5
 slow_join_seconds = 20
+# Smoothing on the guest. The host's cat is drawn this far in the past so there is always a snapshot on
+# each side to blend between; the buffer adds more when arrivals are uneven.
+interpolation_delay_seconds = 0.1
+# The guest's own cat moves at once and is corrected toward the host. Gaps under the dead zone are input
+# timing noise (up to about speed x one send interval) and are left alone; gaps over the snap distance (a
+# swat, a new round) jump at once; anything between is blended in at this rate per second.
+prediction_dead_zone_metres = 0.3
+prediction_snap_metres = 1.5
+prediction_blend_per_second = 8
 
 [secrets]

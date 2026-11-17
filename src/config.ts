@@ -16,6 +16,10 @@ export interface NetSettings {
   readonly stunServers: readonly string[];
   readonly networkCheckSeconds: number;
   readonly slowJoinSeconds: number;
+  readonly interpolationDelaySeconds: number;
+  readonly predictionDeadZoneMetres: number;
+  readonly predictionSnapMetres: number;
+  readonly predictionBlendPerSecond: number;
 }
 
 export interface AppSettings {
@@ -74,6 +78,10 @@ function netSettings(root: Table): NetSettings {
     stunServers: textList(net, "stun_servers"),
     networkCheckSeconds: num(net, "network_check_seconds"),
     slowJoinSeconds: num(net, "slow_join_seconds"),
+    interpolationDelaySeconds: num(net, "interpolation_delay_seconds"),
+    predictionDeadZoneMetres: num(net, "prediction_dead_zone_metres"),
+    predictionSnapMetres: num(net, "prediction_snap_metres"),
+    predictionBlendPerSecond: num(net, "prediction_blend_per_second"),
   };
 }
 

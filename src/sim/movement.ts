@@ -1,4 +1,4 @@
-import type { CatId, CatState, GameState, Rect, Vec2, WorldDef } from "./types";
+import type { CatId, CatState, GameState, Rect, Settings, Vec2, WorldDef } from "./types";
 import type { StepContext } from "./context";
 import {
   add,
@@ -80,11 +80,21 @@ export function moveCircle(pos: Vec2, delta: Vec2, body: Body): Vec2 {
   return at;
 }
 
-function moveCat(cat: CatState, ctx: StepContext): CatState {
-  const catSettings = ctx.settings.cats[cat.id];
-  const wanted = clampLength(ctx.inputs[cat.id].move, 1);
-  const delta = scale(wanted, catSettings.speed * ctx.dt);
-  const body = bodyAt(ctx.world, cat.id, catSettings.radius, cat.pos);
+/**
+ * Moves one cat by `move` (a direction, length clamped to 1) for `dt` seconds at its own speed, with the
+ * same collision as every step. The host's rules and the guest's prediction of its own cat both use this.
+ */
+export function moveOneCat(
+  cat: CatState,
+  move: Vec2,
+  dt: number,
+  world: WorldDef,
+  settings: Settings,
+): CatState {
+  const catSettings = settings.cats[cat.id];
+  const wanted = clampLength(move, 1);
+  const delta = scale(wanted, catSettings.speed * dt);
+  const body = bodyAt(world, cat.id, catSettings.radius, cat.pos);
   const pos = moveCircle(cat.pos, delta, body);
   const displacement = sub(pos, cat.pos);
   const moving = length(displacement) > 0;
@@ -93,5 +103,7 @@ function moveCat(cat: CatState, ctx: StepContext): CatState {
 
 /** Rule: each cat moves by its effective input. */
 export function applyMovement(state: GameState, ctx: StepContext): GameState {
-  return mapCats(state, (cat) => moveCat(cat, ctx));
+  return mapCats(state, (cat) =>
+    moveOneCat(cat, ctx.inputs[cat.id].move, ctx.dt, ctx.world, ctx.settings),
+  );
 }

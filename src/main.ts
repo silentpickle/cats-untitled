@@ -14,7 +14,15 @@ import { buildHouse } from "./render/houseView";
 import { KnockableViews } from "./render/knockableViews";
 import { Markers } from "./render/markers";
 import { createStage, type Stage } from "./render/stage";
-import { iceServers, roomFromUrl, trysteroJoiner } from "./net";
+import {
+  iceServers,
+  lagFromUrl,
+  roomFromUrl,
+  trysteroJoiner,
+  withLag,
+  type JoinRoom,
+  type LagOptions,
+} from "./net";
 import { Lobby } from "./netplay/lobby";
 import { Online, type GameHooks, type OnlineRound } from "./netplay/online";
 import { Troubleshooter, stunServers } from "./netplay/troubleshooter";
@@ -361,6 +369,20 @@ class Game implements GameHooks {
   }
 }
 
+/**
+ * Testing aid: `?lag=200&jitter=40` delays everything this page sends, so two tabs on one computer behave
+ * like a slow connection. The invite link keeps the parameter, so the friend's tab lags too.
+ */
+function lagged(joiner: JoinRoom, lag: LagOptions | null): JoinRoom {
+  if (lag === null) {
+    return joiner;
+  }
+  console.info(
+    `net: simulating ${String(lag.latencyMs)} ms lag, ${String(lag.jitterMs)} ms jitter`,
+  );
+  return (code) => withLag(joiner(code), lag);
+}
+
 /** Hooks up "Play with a friend": the lobby, rooms over Trystero, and invite links. */
 function wireOnline(
   game: Game,
@@ -391,7 +413,7 @@ function wireOnline(
   const transport = { appId: net.appId, stun: stunServers(net) };
   // The network check tests every server the game uses, including TURN if one is added.
   const help = new Troubleshooter(lobby, net, iceServers(transport));
-  const joiner = trysteroJoiner(transport);
+  const joiner = lagged(trysteroJoiner(transport), lagFromUrl(window.location.href));
   const session = new Online(net, online, joiner, lobby, game, help);
   game.setFriendEntry(() => {
     lobby.open();

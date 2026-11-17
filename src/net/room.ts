@@ -40,8 +40,6 @@ export interface RelayCount {
 }
 
 export interface NetRoom {
-  /** This browser's id in the room, as other peers see it. */
-  readonly selfId: string;
   /** A named message channel. Calling it twice with one name returns the same channel. */
   channel(name: string): NetChannel;
   onPeerJoin(handler: (peerId: string) => void): void;

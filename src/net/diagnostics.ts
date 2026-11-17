@@ -116,14 +116,6 @@ export function summarizeCandidates(candidates: readonly Candidate[]): NetworkCh
   };
 }
 
-const UNREACHABLE_MARK = "could not connect to peer";
-
-/** Turns a transport's join-error text into a kind the game can explain. */
-export function classifyJoinError(message: string): NetTrouble {
-  const kind = message.includes(UNREACHABLE_MARK) ? "unreachable" : "refused";
-  return { kind, detail: message };
-}
-
 type AdviceRule = (facts: ConnectionFacts) => string | null;
 
 const noRelays: AdviceRule = ({ relays }) =>
