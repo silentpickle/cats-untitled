@@ -59,4 +59,13 @@ height = 9.0
 distance = 7.0
 follow_lerp = 4.0
 
+[net]
+# Two-player online play. No server of ours: Trystero finds the other browser through public Nostr
+# relays, then the two connect directly. app_id keeps our rooms apart from other apps using the same code.
+app_id = "cats-untitled"
+room_code_length = 4
+# How often the host sends the whole game state, and the guest its input. Higher is smoother but busier.
+snapshots_per_second = 20
+inputs_per_second = 30
+
 [secrets]

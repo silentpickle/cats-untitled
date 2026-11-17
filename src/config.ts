@@ -8,9 +8,17 @@ export interface CameraSettings {
   readonly followLerp: number;
 }
 
+export interface NetSettings {
+  readonly appId: string;
+  readonly roomCodeLength: number;
+  readonly snapshotsPerSecond: number;
+  readonly inputsPerSecond: number;
+}
+
 export interface AppSettings {
   readonly sim: Settings;
   readonly camera: CameraSettings;
+  readonly net: NetSettings;
 }
 
 type Table = Record<string, unknown>;
@@ -33,6 +41,24 @@ function num(parent: Table, key: string): number {
     throw new Error(`config.toml: ${key} must be a number`);
   }
   return value;
+}
+
+function text(parent: Table, key: string): string {
+  const value = parent[key];
+  if (typeof value !== "string" || value === "") {
+    throw new Error(`config.toml: ${key} must be a non-empty string`);
+  }
+  return value;
+}
+
+function netSettings(root: Table): NetSettings {
+  const net = table(root, "net");
+  return {
+    appId: text(net, "app_id"),
+    roomCodeLength: num(net, "room_code_length"),
+    snapshotsPerSecond: num(net, "snapshots_per_second"),
+    inputsPerSecond: num(net, "inputs_per_second"),
+  };
 }
 
 function catSettings(cats: Table, key: string): CatSettings {
@@ -100,6 +126,7 @@ export function parseSettings(text: string): AppSettings {
       distance: num(camera, "distance"),
       followLerp: num(camera, "follow_lerp"),
     },
+    net: netSettings(root),
   };
 }
 

@@ -46,14 +46,47 @@
           >
         </button>
       </div>
+      <button type="button" id="play-friend" class="friend">Play with a friend</button>
       <p class="taps">Tap or click where you want your cat to go.</p>
       <p class="keys">Move: WASD or arrow keys. Space: Aragorn swats, Arwen goes unseen.</p>
+    </div>
+
+    <div id="lobby" class="screen" hidden>
+      <h1>Play with a friend</h1>
+      <div id="lobby-start" class="lobby-part">
+        <p>Pick your cat to open a room. Your friend gets the other one.</p>
+        <div class="hosts">
+          <button type="button" data-host="brother" class="brother">Be Aragorn</button>
+          <button type="button" data-host="sister" class="sister">Be Arwen</button>
+        </div>
+        <p>Or join a friend's room:</p>
+        <form id="join-form" class="join">
+          <input
+            id="join-code"
+            aria-label="Room code"
+            placeholder="CODE"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            maxlength="8"
+          />
+          <button type="submit">Join</button>
+        </form>
+      </div>
+      <div id="lobby-wait" class="lobby-part" hidden>
+        <p>Room code</p>
+        <div id="room-code" class="room-code"></div>
+        <button type="button" id="copy-link">Copy invite link</button>
+      </div>
+      <p id="lobby-status" class="lobby-status" role="status"></p>
+      <button type="button" id="lobby-back" class="quiet">Back</button>
     </div>
 
     <div id="result" class="screen" hidden>
       <h1 id="result-title"></h1>
       <p id="result-detail"></p>
       <button type="button" id="again">Play again</button>
+      <button type="button" id="leave" class="quiet" hidden>Leave room</button>
     </div>
 
     <script type="module" src="/src/main.ts"></script>
