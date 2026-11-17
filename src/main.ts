@@ -217,7 +217,8 @@ class Game implements GameHooks {
     if (spot === null) {
       return;
     }
-    this.goal = planWalk(this.navs[this.player], spot) ?? null;
+    const from = this.state.cats[this.player].pos;
+    this.goal = planWalk(this.navs[this.player], from, spot) ?? null;
     const target = this.goal?.target ?? null;
     const height = target === null ? 0 : platformHeightAt(this.floor, target.x, target.z);
     this.markers.setGoal(target, height);
