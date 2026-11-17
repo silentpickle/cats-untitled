@@ -230,8 +230,15 @@ class Game implements GameHooks {
     this.markers.setGoal(null, 0);
   }
 
-  /** Keys win over a tapped goal and cancel it; otherwise the cat follows its route until it arrives. */
+  /**
+   * Keys win over a tapped goal and cancel it; otherwise the cat follows its route until it arrives. A swat
+   * drops the goal: a cat that was just batted does not wander back toward the place it was sent from.
+   */
   private playerMove(player: CatId): Vec2 {
+    const cat = this.state.cats[player];
+    if (cat.stunnedFor > 0 || cat.fleeFor > 0) {
+      this.clearGoal();
+    }
     const keys = this.controls.keyboard.move();
     if (keys.x !== 0 || keys.z !== 0) {
       this.clearGoal();

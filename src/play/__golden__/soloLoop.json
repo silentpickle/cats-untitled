@@ -280,17 +280,17 @@
     "by": "brother"
    },
    {
-    "kind": "swat_missed",
-    "by": "brother"
-   },
-   {
-    "kind": "swat_missed",
-    "by": "brother"
-   },
-   {
     "kind": "captured",
     "pointId": "food_bowl",
     "by": "sister"
+   },
+   {
+    "kind": "swat_missed",
+    "by": "brother"
+   },
+   {
+    "kind": "swat_missed",
+    "by": "brother"
    }
   ],
   "final": {
@@ -317,19 +317,19 @@
     "sister": {
      "id": "sister",
      "pos": {
-      "x": 1.5772906789422638,
-      "z": 6.990876652177042
+      "x": 0.6179922621286295,
+      "z": 8.1209221629318
      },
-     "facing": -0.3088032000129378,
-     "moving": true,
-     "napping": false,
+     "facing": -0.7631000255259507,
+     "moving": false,
+     "napping": true,
      "hidden": false,
      "stunnedFor": 0,
      "fleeFor": 0,
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 1.9833333333333059,
-     "score": 5.333333333333332
+     "score": 7.966666666666656
     }
    },
    "points": [
@@ -366,8 +366,8 @@
     {
      "id": "dryer",
      "owner": null,
-     "capturer": null,
-     "progress": 0
+     "capturer": "sister",
+     "progress": 0.6933333333333328
     },
     {
      "id": "foyer_rug",
@@ -770,11 +770,6 @@
     "kind": "treat",
     "treatId": "treat_tv",
     "by": "brother"
-   },
-   {
-    "kind": "captured",
-    "pointId": "fireplace",
-    "by": "brother"
    }
   ],
   "final": {
@@ -784,19 +779,19 @@
     "brother": {
      "id": "brother",
      "pos": {
-      "x": 4.068662397036189,
-      "z": 2.0738839357020615
+      "x": 4.998353952301415,
+      "z": 1.280344146713426
      },
-     "facing": -0.8293009256051644,
-     "moving": true,
-     "napping": false,
+     "facing": -2.4704787270375204,
+     "moving": false,
+     "napping": true,
      "hidden": false,
      "stunnedFor": 0,
      "fleeFor": 0,
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 0,
-     "score": 24.299999999999986
+     "score": 22.5166666666666
     },
     "sister": {
      "id": "sister",
@@ -825,9 +820,9 @@
     },
     {
      "id": "fireplace",
-     "owner": "brother",
-     "capturer": null,
-     "progress": 0
+     "owner": null,
+     "capturer": "brother",
+     "progress": 0.48000000000000087
     },
     {
      "id": "couch",
@@ -886,7 +881,7 @@
     {
      "id": "treat_tv",
      "available": false,
-     "respawnIn": 17.20000000000016
+     "respawnIn": 18.233333333333434
     },
     {
      "id": "treat_foyer",
