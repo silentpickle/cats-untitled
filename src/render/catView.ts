@@ -19,7 +19,12 @@ const TUNING = {
   loafEase: 6,
   swaggerRoll: 0.09,
   swaggerRate: 5,
-  brotherWidth: 1.18,
+  brotherWidth: 1.34,
+  sprawlRoll: 1.3,
+  sprawlEase: 4,
+  /** How far his side and his middle sit from his feet, as fractions of his length. */
+  sprawlLift: 0.1,
+  sprawlShift: 0.17,
   brotherWalkPace: 0.8,
   sisterRunPace: 1.2,
   napPace: 0.35,
@@ -123,6 +128,8 @@ export class CatView {
   private opacity = 1;
   private readonly materials: THREE.MeshStandardMaterial[];
   private readonly baseScale: THREE.Vector3;
+  private readonly halfWidth: number;
+  private readonly halfHeight: number;
 
   constructor(
     private readonly id: CatId,
@@ -137,6 +144,9 @@ export class CatView {
     const unit = (BASE_LENGTH * settings.scale) / Math.max(size.x, size.z);
     const width = id === "brother" ? TUNING.brotherWidth : 1;
     this.baseScale = new THREE.Vector3(unit * width, unit, unit);
+    const length = BASE_LENGTH * settings.scale;
+    this.halfWidth = length * TUNING.sprawlLift * width;
+    this.halfHeight = length * TUNING.sprawlShift;
     this.body.scale.copy(this.baseScale);
     this.body.add(model);
     this.object.add(this.body);
@@ -219,7 +229,7 @@ export class CatView {
     this.object.rotation.y += turn * ease(TUNING.turnSpeed, dt);
 
     this.settle(napping, dt);
-    this.swagger(state.moving, dt);
+    this.roll(state.moving, napping, dt);
     this.lunge(dt);
     this.fade(state.stealthFor > 0, ownView, dt);
   }
@@ -245,20 +255,34 @@ export class CatView {
     }
   }
 
-  /** Sinks into a loaf while napping. */
+  /** The sister sinks into a loaf while napping; her brother flops on his side instead. */
   private settle(napping: boolean, dt: number): void {
-    const goal = this.baseScale.y * (napping ? TUNING.loafSquash : 1);
+    const loafing = napping && this.id === "sister";
+    const goal = this.baseScale.y * (loafing ? TUNING.loafSquash : 1);
     this.body.scale.y += (goal - this.body.scale.y) * ease(TUNING.loafEase, dt);
   }
 
-  /** The brother rolls his shoulders when he walks. */
-  private swagger(moving: boolean, dt: number): void {
-    if (this.id !== "brother" || !moving) {
-      this.body.rotation.z *= 1 - ease(TUNING.loafEase, dt);
+  /** The brother rolls his shoulders when he walks and sprawls on his side when he naps. */
+  private roll(moving: boolean, napping: boolean, dt: number): void {
+    if (this.id !== "brother") {
       return;
     }
+    const lean = moving ? this.swagger(dt) : this.rest(napping, dt);
+    this.body.rotation.z = lean;
+    // Rolling about the feet would sink him into the floor and slide him off his spot.
+    this.body.position.y = Math.abs(Math.sin(lean)) * this.halfWidth;
+    this.body.position.x = Math.sin(lean) * this.halfHeight;
+  }
+
+  private swagger(dt: number): number {
     this.walkClock += dt;
-    this.body.rotation.z = Math.sin(this.walkClock * TUNING.swaggerRate) * TUNING.swaggerRoll;
+    return Math.sin(this.walkClock * TUNING.swaggerRate) * TUNING.swaggerRoll;
+  }
+
+  private rest(napping: boolean, dt: number): number {
+    const goal = napping ? TUNING.sprawlRoll : 0;
+    const now = this.body.rotation.z;
+    return now + (goal - now) * ease(TUNING.sprawlEase, dt);
   }
 }
 
