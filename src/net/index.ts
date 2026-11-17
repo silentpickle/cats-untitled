@@ -17,13 +17,30 @@ export {
   type GuestOptions,
   type HostOptions,
   type SessionStatus,
+  type SnapshotInfo,
 } from "./session";
 export { SendRate } from "./rate";
+export {
+  DEFAULT_SNAPSHOT_CAPACITY,
+  MAX_JITTER_ALLOWANCE_SECONDS,
+  MAX_RATE_ADJUST,
+  SNAP_THRESHOLD_SECONDS,
+  SnapshotBuffer,
+  type Bracket,
+  type BufferOptions,
+} from "./snapshotBuffer";
+export {
+  DEFAULT_JITTER_FRACTION,
+  JITTER_QUERY_PARAM,
+  LAG_QUERY_PARAM,
+  lagFromUrl,
+  withLag,
+  type LagOptions,
+} from "./lag";
 export { MemoryHub, settle } from "./memoryRoom";
 export { iceServers, trysteroJoiner, type TrysteroOptions } from "./trysteroRoom";
 export {
   advise,
-  classifyJoinError,
   formatReport,
   networkVerdict,
   parseCandidate,

@@ -2,6 +2,7 @@
 export * from "./types";
 export { createGame } from "./create";
 export { step } from "./step";
+export { moveOneCat } from "./movement";
 export { aiInput } from "./ai";
 export { buildNavGrid } from "./nav";
 export type { NavGrid } from "./nav";

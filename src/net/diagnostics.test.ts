@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   advise,
-  classifyJoinError,
   formatReport,
   networkVerdict,
   parseCandidate,
@@ -10,6 +9,7 @@ import {
   type ConnectionFacts,
   type NetworkCheck,
 } from "./diagnostics";
+import type { NetTrouble } from "./room";
 
 const LOCAL_PORT = 54400;
 const OTHER_PORT = 61000;
@@ -33,6 +33,8 @@ const HOST: Candidate = {
   address: "4f1c9a.local",
   port: LOCAL_PORT,
 };
+
+const UNREACHABLE: NetTrouble = { kind: "unreachable", detail: "peer-connect-failed: no route" };
 
 const GOOD_NETWORK: NetworkCheck = {
   local: true,
@@ -120,14 +122,6 @@ describe("summarizeCandidates", () => {
   });
 });
 
-describe("classifyJoinError", () => {
-  it("tells a failed direct connection from a refusal", () => {
-    const failed = "could not connect to peer abc after exchanging SDP; configure TURN servers";
-    expect(classifyJoinError(failed).kind).toBe("unreachable");
-    expect(classifyJoinError("incorrect room password when decrypting offer").kind).toBe("refused");
-  });
-});
-
 describe("advise", () => {
   it("says nothing when nothing looks wrong", () => {
     expect(advise(facts({ network: GOOD_NETWORK }))).toEqual([]);
@@ -147,7 +141,7 @@ describe("advise", () => {
   });
 
   it("explains a failed direct connection", () => {
-    const trouble = classifyJoinError("could not connect to peer x after exchanging SDP");
+    const trouble = UNREACHABLE;
     expect(advise(facts({ trouble }))[0]).toMatch(/networks wouldn't connect/);
   });
 
@@ -181,7 +175,7 @@ describe("advise", () => {
   });
 
   it("drops 'still looking' once there is a real problem to explain", () => {
-    const trouble = classifyJoinError("could not connect to peer x");
+    const trouble = UNREACHABLE;
     expect(advise(facts({ trouble, waitingSeconds: SLOW_AFTER }))).toHaveLength(1);
   });
 });

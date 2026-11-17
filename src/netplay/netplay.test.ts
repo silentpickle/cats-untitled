@@ -6,7 +6,7 @@ import { GuestSession, HostSession, MemoryHub, settle } from "../net";
 import { LocalMatch, SIM_STEP, type RivalInput } from "../play/localMatch";
 import { IDLE_INPUT, createGame } from "../sim";
 import type { CatInput, GameEvent } from "../sim/types";
-import { GuestMatch } from "./guestMatch";
+import { GuestMatch, type GuestSmoothing } from "./guestMatch";
 import { HostMatch, remoteRival } from "./hostMatch";
 import { PROTOCOL_VERSION, decodeWelcome, type CatsGuest, type CatsHost } from "./protocol";
 import { decodeCatInput, decodeGameState } from "./wire";
@@ -20,6 +20,25 @@ const FALLBACK: CatInput = { move: { x: 0, z: 1 }, swat: false, stealth: false }
 
 const world = toWorld(MAIN_FLOOR);
 const sim = loadSettings().sim;
+const net = loadSettings().net;
+
+/** The guest plays Aragorn, as in `connectedPair`. */
+const SMOOTHING: GuestSmoothing = {
+  cat: "brother",
+  world,
+  settings: sim,
+  delaySeconds: net.interpolationDelaySeconds,
+  inputsPerSecond: INPUTS_PER_SECOND,
+  predict: {
+    deadZoneMetres: net.predictionDeadZoneMetres,
+    snapMetres: net.predictionSnapMetres,
+    blendPerSecond: net.predictionBlendPerSecond,
+  },
+};
+
+function guestMatch(link: CatsGuest): GuestMatch {
+  return new GuestMatch(link, createGame(world, sim), SMOOTHING);
+}
 
 interface Pair {
   readonly hub: MemoryHub;
@@ -48,7 +67,13 @@ async function connectedPair(): Promise<Pair> {
 /** Arwen hosts; Aragorn's input comes from the guest. */
 function hostMatch(link: CatsHost, fallback: RivalInput = () => FALLBACK): HostMatch {
   const local = new LocalMatch(world, sim, "sister", remoteRival(link, fallback));
-  return new HostMatch(local, link, SNAPSHOTS_PER_SECOND);
+  let frames = 0;
+  // A frame-counting clock, so snapshot times follow the simulation rather than the test's real time.
+  const clock = (): number => {
+    frames += 1;
+    return frames * FRAME;
+  };
+  return new HostMatch(local, link, SNAPSHOTS_PER_SECOND, clock);
 }
 
 async function runFrames(
@@ -70,7 +95,7 @@ describe("online match", () => {
   it("moves the guest's cat on the host and shows it on the guest", async () => {
     const { hostLink, guestLink } = await connectedPair();
     const host = hostMatch(hostLink);
-    const guest = new GuestMatch(guestLink, createGame(world, sim), INPUTS_PER_SECOND);
+    const guest = guestMatch(guestLink);
     const start = host.state.cats.brother.pos.x;
     await runFrames(SECOND_OF_FRAMES, host, guest, EAST);
     expect(host.state.cats.brother.pos.x).toBeGreaterThan(start);
@@ -78,10 +103,31 @@ describe("online match", () => {
     expect(guest.state.timeLeft).toBeLessThan(sim.round.durationSeconds);
   });
 
+  it("moves the guest's own cat within one input send, before the host replies", async () => {
+    const { guestLink } = await connectedPair();
+    const guest = guestMatch(guestLink);
+    const start = guest.state.cats.brother.pos.x;
+    const framesPerSend = Math.ceil(SECOND_OF_FRAMES / INPUTS_PER_SECOND);
+    for (let i = 0; i < framesPerSend; i += 1) {
+      guest.advance(FRAME, () => EAST);
+    }
+    expect(guest.state.cats.brother.pos.x).toBeGreaterThan(start);
+  });
+
+  it("keeps the guest's cat where the host has it once both stop", async () => {
+    const { hostLink, guestLink } = await connectedPair();
+    const host = hostMatch(hostLink);
+    const guest = guestMatch(guestLink);
+    await runFrames(SECOND_OF_FRAMES, host, guest, EAST);
+    await runFrames(SECOND_OF_FRAMES, host, guest, IDLE_INPUT);
+    const gap = Math.abs(guest.state.cats.brother.pos.x - host.state.cats.brother.pos.x);
+    expect(gap).toBeLessThanOrEqual(net.predictionDeadZoneMetres);
+  });
+
   it("delivers every host event to the guest exactly once", async () => {
     const { hostLink, guestLink } = await connectedPair();
     const host = hostMatch(hostLink);
-    const guest = new GuestMatch(guestLink, createGame(world, sim), INPUTS_PER_SECOND);
+    const guest = guestMatch(guestLink);
     const swat: CatInput = { ...IDLE_INPUT, swat: true };
     const hostEvents: GameEvent[] = [];
     const guestEvents: GameEvent[] = [];

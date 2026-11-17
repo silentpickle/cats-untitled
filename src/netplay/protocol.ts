@@ -6,7 +6,7 @@ import { CAT_IDS, type CatId, type CatInput, type GameState } from "../sim/types
  * Bump whenever GameState, CatInput or Welcome change shape, so a stale page and a fresh one refuse
  * each other with a clear message instead of misreading each other's snapshots.
  */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** Told to the guest on joining: which cat it plays. */
 export interface Welcome {

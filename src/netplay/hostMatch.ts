@@ -18,6 +18,16 @@ export function remoteRival(link: CatsHost, fallback: RivalInput): RivalInput {
   };
 }
 
+const MS_PER_SECOND = 1000;
+
+/**
+ * The host's clock for stamping snapshots, in seconds. The page clock rather than the round's, because it
+ * keeps rising across rounds: the guest drops any snapshot that is not newer than the last.
+ */
+export function pageSeconds(): number {
+  return performance.now() / MS_PER_SECOND;
+}
+
 /**
  * Runs the round like a solo match and sends snapshots to the guest at a steady rate. A snapshot carries
  * every event since the last one, so the guest hears every capture and swat even though it sees fewer
@@ -31,6 +41,7 @@ export class HostMatch implements Match {
     private readonly local: Match,
     private readonly link: CatsHost,
     snapshotsPerSecond: number,
+    private readonly clock: () => number = pageSeconds,
   ) {
     this.rate = new SendRate(snapshotsPerSecond);
   }
@@ -43,7 +54,7 @@ export class HostMatch implements Match {
     const events = this.local.advance(dt, mine);
     this.pending.push(...events);
     if (this.rate.due(dt)) {
-      this.link.sendState({ ...this.local.state, events: this.pending });
+      this.link.sendState({ ...this.local.state, events: this.pending }, this.clock());
       this.pending = [];
     }
     return events;

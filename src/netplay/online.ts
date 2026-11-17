@@ -140,7 +140,18 @@ export class Online {
   }
 
   private startGuestRound(cat: CatId, link: CatsGuest): void {
-    const match = new GuestMatch(link, this.hooks.idleState(), this.net.inputsPerSecond);
+    const match = new GuestMatch(link, this.hooks.idleState(), {
+      cat,
+      world: this.game.world,
+      settings: this.game.sim,
+      delaySeconds: this.net.interpolationDelaySeconds,
+      inputsPerSecond: this.net.inputsPerSecond,
+      predict: {
+        deadZoneMetres: this.net.predictionDeadZoneMetres,
+        snapMetres: this.net.predictionSnapMetres,
+        blendPerSecond: this.net.predictionBlendPerSecond,
+      },
+    });
     this.help.stop();
     this.lobby.hide();
     this.hooks.startRound(cat, match, {

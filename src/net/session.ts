@@ -12,6 +12,12 @@ import type { NetRoom } from "./room";
  * the code cannot take control.
  *
  * Generic over the game's types: the game passes decoders that check what arrives off the network.
+ *
+ * Envelopes: each input travels as `{ seq, input }`, numbered 1, 2, 3… by the guest. Each snapshot travels
+ * as `{ time, ack, state }`: the host's simulation clock and the `seq` of the newest input the host had
+ * when it took the snapshot. A guest that predicts its own moves replays the inputs after `ack` on top of
+ * the snapshot; a guest that interpolates places the snapshot on its timeline by `time`. Stale or
+ * out-of-order envelopes are dropped on arrival, so both clocks only move forward.
  */
 
 /** Checks untrusted data; returns null when it is not a valid `T`. */
@@ -39,6 +45,48 @@ type Control =
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+/** What the guest learns about a snapshot besides the state itself. */
+export interface SnapshotInfo {
+  /** The host's simulation clock when it took the snapshot, in seconds. Rises within a session. */
+  readonly time: number;
+  /** The `seq` of the newest guest input the host had applied; 0 before any. */
+  readonly ack: number;
+}
+
+interface InputEnvelope {
+  readonly seq: number;
+  readonly input: unknown;
+}
+
+interface StateEnvelope extends SnapshotInfo {
+  readonly state: unknown;
+}
+
+/** No input has arrived yet, or none has been sent yet: real sequence numbers start at 1. */
+const NO_SEQ = 0;
+
+function isClockValue(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isSeq(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > NO_SEQ;
+}
+
+function decodeInputEnvelope(raw: unknown): InputEnvelope | null {
+  if (!isRecord(raw) || !isSeq(raw.seq)) {
+    return null;
+  }
+  return { seq: raw.seq, input: raw.input };
+}
+
+function decodeStateEnvelope(raw: unknown): StateEnvelope | null {
+  if (!isRecord(raw) || !isClockValue(raw.time) || !isClockValue(raw.ack)) {
+    return null;
+  }
+  return { time: raw.time, ack: raw.ack, state: raw.state };
 }
 
 function decodeControl(raw: unknown): Control | null {
@@ -94,6 +142,7 @@ export class HostSession<State, Input> {
   private readonly status = new StatusCell();
   private guest: string | null = null;
   private input: Input | null = null;
+  private inputSeq = NO_SEQ;
   private readonly room: NetRoom;
 
   constructor(private readonly options: HostOptions<Input>) {
@@ -125,12 +174,21 @@ export class HostSession<State, Input> {
     return this.input;
   }
 
-  /** Sends a snapshot to the guest, if one is connected. */
-  sendState(state: State): void {
+  /** The `seq` of `latestInput()`: 0 before the first input arrives or after the guest left. */
+  latestInputSeq(): number {
+    return this.inputSeq;
+  }
+
+  /**
+   * Sends a snapshot to the guest, if one is connected, stamped with `time` (the game's simulation clock
+   * in seconds, rising within a session) and the `seq` of the latest input received.
+   */
+  sendState(state: State, time: number): void {
     if (this.guest === null) {
       return;
     }
-    this.room.channel(STATE).send(state, this.guest);
+    const envelope: StateEnvelope = { time, ack: this.inputSeq, state };
+    this.room.channel(STATE).send(envelope, this.guest);
   }
 
   close(): void {
@@ -161,11 +219,18 @@ export class HostSession<State, Input> {
     this.status.set("connected");
   }
 
+  /** Takes an input only when it is newer than the one held and decodes; otherwise keeps the last. */
   private onInput(raw: unknown, from: string): void {
-    if (from !== this.guest) {
+    const envelope = from === this.guest ? decodeInputEnvelope(raw) : null;
+    if (envelope === null || envelope.seq <= this.inputSeq) {
       return;
     }
-    this.input = this.options.decodeInput(raw) ?? this.input;
+    const input = this.options.decodeInput(envelope.input);
+    if (input === null) {
+      return;
+    }
+    this.input = input;
+    this.inputSeq = envelope.seq;
   }
 
   private forget(peer: string): void {
@@ -174,6 +239,7 @@ export class HostSession<State, Input> {
     }
     this.guest = null;
     this.input = null;
+    this.inputSeq = NO_SEQ;
     this.status.set("left");
   }
 }
@@ -189,7 +255,10 @@ export class GuestSession<State, Input, Welcome> {
   private readonly status = new StatusCell();
   private host: string | null = null;
   private welcomed: (welcome: Welcome) => void = () => undefined;
-  private snapshot: (state: State) => void = () => undefined;
+  private snapshot: (state: State, info: SnapshotInfo) => void = () => undefined;
+  private sentSeq = NO_SEQ;
+  /** Host time of the newest snapshot delivered, or null before the first one from this host. */
+  private snapshotTime: number | null = null;
   private readonly room: NetRoom;
 
   constructor(private readonly options: GuestOptions<State, Welcome>) {
@@ -219,16 +288,26 @@ export class GuestSession<State, Input, Welcome> {
     this.welcomed = listener;
   }
 
-  /** Called for every valid snapshot from the host. */
-  onSnapshot(listener: (state: State) => void): void {
+  /**
+   * Called for every valid snapshot from the host that is newer than the last one delivered. Snapshots
+   * that arrive late or out of order are dropped.
+   */
+  onSnapshot(listener: (state: State, info: SnapshotInfo) => void): void {
     this.snapshot = listener;
   }
 
-  sendInput(input: Input): void {
+  /**
+   * Sends `input` to the host, numbered 1, 2, 3… Returns the `seq` used, which the host later echoes as
+   * `SnapshotInfo.ack`; returns 0 and sends nothing while not connected.
+   */
+  sendInput(input: Input): number {
     if (this.host === null) {
-      return;
+      return NO_SEQ;
     }
-    this.room.channel(INPUT).send(input, this.host);
+    this.sentSeq += 1;
+    const envelope: InputEnvelope = { seq: this.sentSeq, input };
+    this.room.channel(INPUT).send(envelope, this.host);
+    return this.sentSeq;
   }
 
   close(): void {
@@ -255,19 +334,28 @@ export class GuestSession<State, Input, Welcome> {
       return;
     }
     this.host = from;
+    this.sentSeq = NO_SEQ;
+    this.snapshotTime = null;
     this.room.channel(CONTROL).send({ kind: "join", protocol: this.options.protocol }, from);
     this.status.set("connected");
     this.welcomed(welcome);
   }
 
   private onState(raw: unknown, from: string): void {
-    if (from !== this.host) {
+    const envelope = from === this.host ? decodeStateEnvelope(raw) : null;
+    if (envelope === null || !this.isNewer(envelope.time)) {
       return;
     }
-    const state = this.options.decodeState(raw);
-    if (state !== null) {
-      this.snapshot(state);
+    const state = this.options.decodeState(envelope.state);
+    if (state === null) {
+      return;
     }
+    this.snapshotTime = envelope.time;
+    this.snapshot(state, { time: envelope.time, ack: envelope.ack });
+  }
+
+  private isNewer(time: number): boolean {
+    return this.snapshotTime === null || time > this.snapshotTime;
   }
 
   private forget(peer: string): void {

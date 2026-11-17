@@ -1,6 +1,6 @@
-import { getRelaySockets, joinRoom, selfId, type MessageAction } from "trystero";
-import { classifyJoinError } from "./diagnostics";
+import { getRelaySockets, joinRoom, type ActionError, type MessageAction } from "trystero";
 import type { JoinRoom, MessageHandler, NetChannel, NetRoom, NetTrouble, RelayCount } from "./room";
+import { troubleFor } from "./trysteroErrors";
 
 /**
  * The only file that knows about Trystero. Trystero finds the other browser through public Nostr relays
@@ -44,18 +44,37 @@ function parseWire(
   }
 }
 
+function isActionError(error: unknown): error is ActionError {
+  return error instanceof Error && "kind" in error;
+}
+
+/**
+ * A send to a peer that has just left rejects; that is normal at the end of a round, so it is ignored.
+ * Anything else is a real fault and is rethrown.
+ */
+function ignoreDeparted(error: unknown): void {
+  if (isActionError(error) && error.kind === "disconnected") {
+    return;
+  }
+  throw error;
+}
+
 function wrapChannel(name: string, action: Wire): NetChannel {
+  let unsubscribe: () => void = () => undefined;
   return {
     send: (data, to) => {
-      void action.send(JSON.stringify(data), to === undefined ? {} : { target: to });
+      action
+        .send(JSON.stringify(data), to === undefined ? {} : { target: to })
+        .catch(ignoreDeparted);
     },
     onMessage: (handler: MessageHandler) => {
-      action.onMessage = (text, context) => {
+      unsubscribe();
+      unsubscribe = action.onMessage((text, context) => {
         const parsed = parseWire(text, name);
         if (parsed.ok) {
           handler(parsed.data, context.peerId);
         }
-      };
+      });
     },
   };
 }
@@ -79,7 +98,6 @@ function iceConfig(options: TrysteroOptions): {
 
 /** Relay sockets are shared by every room on the page; count the ones open now. */
 function openRelays(): RelayCount {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Trystero types it `any`; checked below.
   const sockets: unknown = getRelaySockets();
   if (typeof sockets !== "object" || sockets === null) {
     return { open: 0, connecting: 0, total: 0 };
@@ -97,19 +115,39 @@ function ignoreTrouble(): void {
   // Nobody is listening yet.
 }
 
+/** Keeps one listener per event: setting a new one removes the previous one. */
+function replacing<T>(subscribe: (handler: T) => () => void): (handler: T) => void {
+  let unsubscribe: () => void = () => undefined;
+  return (handler) => {
+    unsubscribe();
+    unsubscribe = subscribe(handler);
+  };
+}
+
 /** A `JoinRoom` backed by Trystero's default (Nostr) matchmaking. */
 export function trysteroJoiner(options: TrysteroOptions): JoinRoom {
   return (code) => {
     let troubleHandler: (trouble: NetTrouble) => void = ignoreTrouble;
-    const room = joinRoom({ appId: options.appId, ...iceConfig(options) }, code, {
-      onJoinError: (details) => {
-        console.warn("net: could not join room", details.error);
-        troubleHandler(classifyJoinError(details.error));
-      },
+    const room = joinRoom({ appId: options.appId, ...iceConfig(options) }, code);
+    room.onError((error) => {
+      console.warn(`net: room error ${error.code}`, error.message);
+      const trouble = troubleFor(error);
+      if (trouble !== null) {
+        troubleHandler(trouble);
+      }
     });
     const channels = new Map<string, NetChannel>();
+    const onPeerJoin = replacing<(peerId: string) => void>((handler) =>
+      room.onPeerJoin(({ peerId }) => {
+        handler(peerId);
+      }),
+    );
+    const onPeerLeave = replacing<(peerId: string) => void>((handler) =>
+      room.onPeerLeave(({ peerId }) => {
+        handler(peerId);
+      }),
+    );
     const net: NetRoom = {
-      selfId,
       channel: (name) => {
         const existing = channels.get(name);
         if (existing !== undefined) {
@@ -119,12 +157,8 @@ export function trysteroJoiner(options: TrysteroOptions): JoinRoom {
         channels.set(name, made);
         return made;
       },
-      onPeerJoin: (handler) => {
-        room.onPeerJoin = handler;
-      },
-      onPeerLeave: (handler) => {
-        room.onPeerLeave = handler;
-      },
+      onPeerJoin,
+      onPeerLeave,
       onTrouble: (handler) => {
         troubleHandler = handler;
       },
