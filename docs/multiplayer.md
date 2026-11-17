@@ -19,7 +19,7 @@ This document covers how it works, how it is built here, and how to lift it into
 
 | Issue                                    | What happens                                                              | What to do                                                                                  |
 | ---------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Strict networks (some offices, carriers) | The direct connection fails; the guest stays on "Looking for the room…"   | Add a TURN relay (see [Adding a TURN relay](#adding-a-turn-relay)). Free tiers exist.       |
+| Strict networks (some offices, carriers) | The direct connection fails; the lobby says so and opens its help panel   | Add a TURN relay (see [Adding a TURN relay](#adding-a-turn-relay)). Free tiers exist.       |
 | Public relays have no uptime guarantee   | Rarely, matchmaking is slow or fails                                      | Trystero tries several relays at once. Try again, or pass your own relay list.              |
 | The host's page is the game              | If the host closes the tab or loses Wi-Fi, the round ends for the guest   | The guest sees "Connection lost". If the guest leaves, the computer takes over on the host. |
 | Background tabs are throttled            | A host tab in the background (or a locked phone) nearly stops the game    | The host keeps the game in front. Same for the guest's input.                               |
@@ -61,14 +61,18 @@ src/net/          Game-agnostic. Nothing here imports the game. Copy this folder
   session.ts        HostSession / GuestSession: handshake, seats, status, decoding.
   roomCode.ts       Codes, normalising typed codes, invite links.
   rate.ts           SendRate: "send N times a second, whatever the frame rate".
+  diagnostics.ts    Troubleshooting, pure: parse ICE candidates, spot strict NATs, advice, reports.
+  probe.ts          The network check: gathers ICE candidates from the STUN servers. Browser only.
+  watch.ts          ConnectionWatch: relays, transport trouble and elapsed time for one room.
 
 src/netplay/      This game's glue. Knows about cats; uses src/net.
   protocol.ts       PROTOCOL_VERSION, the Welcome message (which cat the guest plays).
   wire.ts           Decoders for GameState and CatInput: everything off the network is checked.
   hostMatch.ts      Runs the round locally and sends snapshots; the guest's input drives the other cat.
   guestMatch.ts     Shows snapshots and sends input; never runs the rules.
-  lobby.ts          The "Play with a friend" screen.
+  lobby.ts          The "Play with a friend" screen, including the "Trouble connecting?" panel.
   online.ts         Turns session status into rounds and messages.
+  troubleshooter.ts Keeps the help panel current while a room waits for its second player.
 
 src/play/localMatch.ts   The fixed-step loop. Solo and host both use it; the guest swaps in GuestMatch.
 ```
@@ -78,7 +82,8 @@ events that happened, and `state` is what to draw. Solo is a `LocalMatch` with t
 host is a `HostMatch` wrapping a `LocalMatch` whose rival is the guest's input; the guest is a `GuestMatch`.
 The renderer, HUD and sounds do not know which one they are looking at.
 
-Settings live in `config.toml` under `[net]`: the app id, room code length, and the two send rates.
+Settings live in `config.toml` under `[net]`: the app id, room code length, the two send rates, the STUN
+servers, and the troubleshooting timings.
 
 ## Reusing it in another project
 
@@ -148,8 +153,28 @@ Settings live in `config.toml` under `[net]`: the app id, room code length, and 
    ```
 
 6. **Test without a network** using `MemoryHub`: each `hub.join(id)` is a separate browser, messages go
-   through JSON like the real wire, and `await settle()` delivers everything queued. See
-   `src/net/session.test.ts` and `src/netplay/netplay.test.ts`.
+   through JSON like the real wire, and `await settle()` delivers everything queued.
+   `hub.reportTrouble(id, trouble)` fakes a failed connection. See `src/net/session.test.ts` and
+   `src/netplay/netplay.test.ts`.
+
+7. **Show players what is wrong** (see [Troubleshooting](#troubleshooting)). Give the joiner your STUN
+   list so the network check tests the same servers the game uses, then watch the room while it waits:
+
+   ```ts
+   import { ConnectionWatch, advise, checkNetwork, formatReport } from "./net";
+
+   const stun = [{ urls: "stun:stun.l.google.com:19302" }];
+   const joinRoom = trysteroJoiner({ appId: "my-game", stun });
+   const room = joinRoom(code);
+   const watch = new ConnectionWatch(room, { slowAfterSeconds: 20 });
+   watch.onChange(() => showAdvice(advise(watch.facts())));
+   // From a "Check my connection" button; rejects only if the browser blocks WebRTC.
+   checkNetwork(stun, 5000).then((check) => watch.noteNetwork(check));
+   copyToClipboard(formatReport(watch.facts(), { role: "guest" }));
+   ```
+
+   A transport of your own must implement `onTrouble` and `relays` on its `NetRoom`. A transport with no
+   relays can return `{ open: 1, connecting: 0, total: 1 }`, as `MemoryHub` does.
 
 ### Design choices worth keeping
 
@@ -164,6 +189,63 @@ Settings live in `config.toml` under `[net]`: the app id, room code length, and 
 - **Keep the transport behind `NetRoom`.** Trystero can be replaced (another Trystero strategy, PeerJS, a
   WebSocket server) by writing one function that returns a `NetRoom`; nothing else changes.
 
+## Troubleshooting
+
+A connection needs three things. The lobby's **Trouble connecting?** panel checks each one and says what to
+do in plain words.
+
+| Step                  | What can go wrong                             | How the game finds out                                                       | What the player is told                               |
+| --------------------- | --------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 1. Matchmaking        | No relay reachable (offline, VPN, ad blocker) | Counts open relay sockets every second (Trystero's `getRelaySockets`)        | Check the internet; try without a VPN or ad blocker   |
+| 2. Finding the friend | Wrong code, or the host's tab is hidden       | Still waiting after `slow_join_seconds`                                      | Check the code; keep the room screen in front         |
+| 3. Connecting         | The networks refuse a direct connection       | Trystero's `onJoinError`: "could not connect to peer … after exchanging SDP" | Found your friend, but the networks won't connect     |
+| Network check         | WebRTC blocked by the browser or an extension | The check cannot start a WebRTC connection                                   | A privacy setting or extension is blocking it         |
+| Network check         | STUN blocked (no public address)              | No `srflx` candidate comes back                                              | Only someone on the same Wi-Fi can connect            |
+| Network check         | Strict (symmetric) NAT                        | More public ports than local sockets: the router changes the port per server | Works with most home networks, not another strict one |
+
+How the network check works: it opens a WebRTC connection to nobody, using the same STUN servers as the
+game, and reads the ICE candidates the browser gathers for `network_check_seconds`. Nothing is sent to the
+other player. A `host` candidate means WebRTC works, a `srflx` one means STUN answered, and a `relay` one
+means a TURN server answered. The strict-NAT test is a heuristic. A router that keeps one public port per
+local socket is fine; one that hands each STUN server a different port is strict. A device with several
+network interfaces can blur this, so the advice says "looks strict".
+
+What the checks cannot see:
+
+- **Two strict networks together.** Each side's check looks only at its own network. Both players should run
+  it, and if both say "looks strict", only a TURN relay will connect them.
+- **A firewall that lets STUN through but blocks the game's traffic.** This shows up as step 3: the
+  friend is found but the connection fails.
+
+**Copy report** puts a few lines like these on the clipboard for players to send when asking for help:
+
+```text
+role: guest
+browser: Mozilla/5.0 (iPhone; …)
+time: 2026-11-17T09:20:00.000Z
+relays open: 4 of 5
+waiting: 31 s
+trouble: unreachable (could not connect to peer … after exchanging SDP; configure TURN servers …)
+webrtc: yes
+public address (stun): yes
+turn relay: no
+nat mapping: changes
+advice: Found your friend, but your two networks wouldn't connect directly. …
+```
+
+It holds no IP addresses and no room code. The peer id in the trouble line is random for each page load.
+
+### Testing on real networks
+
+Two tabs on one computer always connect, so they prove the code and the relays work, but not the networks.
+Before relying on online play, try these:
+
+| Host                 | Guest                        | Expect                                                         |
+| -------------------- | ---------------------------- | -------------------------------------------------------------- |
+| Laptop on home Wi-Fi | Phone on the same Wi-Fi      | Connects                                                       |
+| Laptop on home Wi-Fi | Phone on mobile data         | Usually connects; if not, the check shows which side is strict |
+| Phone on mobile data | Another phone on mobile data | Often fails without TURN; the panel says why                   |
+
 ## Adding a TURN relay
 
 Most home networks connect directly. If players on strict networks cannot connect, give Trystero a TURN
@@ -175,6 +257,9 @@ trysteroJoiner({
   turn: [{ urls: "turn:turn.example.com:3478", username: "...", credential: "..." }],
 });
 ```
+
+When `stun` is also given, `trysteroJoiner` passes both lists together, so the network check (with
+`iceServers(options)`) tests the TURN server too and reports `turn relay: yes`.
 
 Several providers have free tiers. TURN credentials are secrets: list their names under `[secrets]` in
 `config.toml` and keep the values in `secrets.env`, never in code. Note that anything shipped to a static page
