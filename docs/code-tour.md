@@ -28,7 +28,7 @@ takes a state and the two cats' inputs and returns the next state. Everything el
 | `src/audio/`   | Sounds synthesized with Web Audio. No audio files.                                     |
 | `src/play/`    | The fixed-step loop (`LocalMatch`) behind the `Match` interface the frame loop uses.   |
 | `src/net/`     | Room codes and host/guest sessions over Trystero. Game-agnostic; reusable as is.       |
-| `src/netplay/` | This game's online glue: wire decoders, host and guest matches, the lobby.             |
+| `src/netplay/` | This game's online glue: wire decoders, host and guest matches, smoothing, the lobby.  |
 | `src/main.ts`  | Loads everything and runs the frame loop.                                              |
 
 ## One frame
@@ -60,6 +60,7 @@ its own file.
 | The cats' names                               | `CAT_NAMES` in `src/ui/screens.ts`, and the labels in `index.html`       |
 | Colours of the couch, rugs, counters          | `COLORS` in `src/house/mainFloor.ts`                                     |
 | Online send rates, room code length           | `[net]` in `config.toml`                                                 |
+| How smooth or snappy online play feels        | `interpolation_delay_seconds` and `prediction_*` in `config.toml`        |
 | What crosses the wire                         | `src/netplay/wire.ts`, then bump `PROTOCOL_VERSION` in `protocol.ts`     |
 
 ## The house as data
