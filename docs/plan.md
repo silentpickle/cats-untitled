@@ -34,7 +34,7 @@ status"). The first pass does not need it: headless Blender handles any format c
 | Movement  | 2D collision on a floor plan, no physics engine                     | Cats walk and hop onto furniture via marked "perch" spots; far less to go wrong |
 | House     | Described as data (rooms, walls, furniture, points), not code       | New photos or a sketch change one data file                                     |
 | Furniture | Kenney Furniture Kit (CC0), boxes where the kit has no match        | One consistent style, quick to place                                            |
-| Opponent  | AI sibling first                                                    | Online multiplayer is a later, separate project                                 |
+| Opponent  | AI sibling, or a friend by room code                                | Online play is peer-to-peer with no server of ours; see `multiplayer.md`        |
 | Floors    | Main floor from photos; second floor is an invented bedroom level   | Stairs are a trigger that swaps floors                                          |
 | Hosting   | itch.io (static upload)                                             | Free, one link, no account needed to play                                       |
 
@@ -128,7 +128,7 @@ It becomes worth fixing at M4 if the stock cat needs reshaping (long fur for the
 Built for the main floor: both cats (Aragorn the brother, Arwen the sister), the computer sibling, nap
 points, treats, swat, hiding, scoring, the round clock, cat select and score screens, kit furniture tinted
 to match the photos, keyboard and touch controls, a mischief list per cat, knockable things (cup, remote,
-toy mouse) and synthesized sound. Not started: the second floor, people, the bedtime ending, publishing.
+toy mouse), synthesized sound, and two-player online play by room code (`multiplayer.md`). Not started: the second floor, people, the bedtime ending, publishing.
 
 Known rough edges:
 
@@ -141,3 +141,6 @@ Known rough edges:
   and can be retried 0.7 seconds after a miss. Both are set in `config.toml`.
 - The computer cat does not go after its mischief list; it only ticks items off by accident.
 - Sounds are synthesized and have not been tuned by ear.
+- Online play has been tested in two tabs on one machine, not yet across two devices or networks, and not
+  through a round ending into "Play again". The host's page must stay in front: browsers throttle background
+  tabs, which nearly stops the game for both players.
