@@ -14,23 +14,14 @@ import { buildHouse } from "./render/houseView";
 import { KnockableViews } from "./render/knockableViews";
 import { Markers } from "./render/markers";
 import { createStage, type Stage } from "./render/stage";
-import {
-  aiInput,
-  buildNavGrid,
-  createGame,
-  planWalk,
-  step,
-  walkInput,
-  type NavGrid,
-  type WalkGoal,
-} from "./sim";
+import { LocalMatch, computerRival, otherCat } from "./play/localMatch";
+import { buildNavGrid, createGame, planWalk, walkInput, type NavGrid, type WalkGoal } from "./sim";
 import {
   CAT_IDS,
   type CatId,
   type CatInput,
   type GameEvent,
   type GameState,
-  type Inputs,
   type Vec2,
   type WorldDef,
 } from "./sim/types";
@@ -40,8 +31,6 @@ import { Hud } from "./ui/hud";
 import { MischiefList } from "./ui/mischiefList";
 import { Screens } from "./ui/screens";
 
-const STEPS_PER_SECOND = 60;
-const SIM_STEP = 1 / STEPS_PER_SECOND;
 const MAX_FRAME = 0.1;
 const MS_PER_SECOND = 1000;
 const HALF = 0.5;
@@ -57,15 +46,12 @@ interface Controls {
   readonly ability: AbilityButton;
 }
 
-function otherCat(cat: CatId): CatId {
-  return cat === "brother" ? "sister" : "brother";
-}
-
 /** Owns one running house: the rules state, the things drawn, and the loop that joins them. */
 class Game {
-  private state: GameState;
+  /** The board shown behind the menus, before a round starts. */
+  private readonly idle: GameState;
+  private match: LocalMatch | null = null;
   private player: CatId | null = null;
-  private leftover = 0;
   private lastTime = 0;
   private goal: WalkGoal | null = null;
   private readonly navs: Record<CatId, NavGrid>;
@@ -86,7 +72,7 @@ class Game {
     private readonly knockables: KnockableViews,
     private readonly controls: Controls,
   ) {
-    this.state = createGame(world, settings.sim);
+    this.idle = createGame(world, settings.sim);
     this.navs = {
       brother: buildNavGrid(world, "brother", settings.sim),
       sister: buildNavGrid(world, "sister", settings.sim),
@@ -106,13 +92,19 @@ class Game {
     );
   }
 
+  private get state(): GameState {
+    return this.match?.state ?? this.idle;
+  }
+
   /** Read-only peek for play-testing from the browser console. */
   snapshot(): { readonly player: CatId | null; readonly state: GameState } {
     return { player: this.player, state: this.state };
   }
 
   private begin(cat: CatId): void {
-    this.state = createGame(this.world, this.settings.sim);
+    const sim = this.settings.sim;
+    const rival = computerRival(this.world, sim, this.navs, otherCat(cat));
+    this.match = new LocalMatch(this.world, sim, cat, rival);
     this.player = cat;
     this.hud.show(cat, this.world.napPoints.length, HINTS[cat]);
     this.mischiefList.show(cat, this.world.mischief);
@@ -124,7 +116,7 @@ class Game {
 
   private reset(): void {
     this.player = null;
-    this.state = createGame(this.world, this.settings.sim);
+    this.match = null;
     this.hud.hide();
     this.mischiefList.hide();
     this.sounds.setPurring(false);
@@ -209,35 +201,26 @@ class Game {
 
   private advance(dt: number): void {
     const player = this.player;
-    if (player === null) {
+    if (player === null || this.match === null) {
       return;
     }
-    this.leftover += dt;
-    while (this.leftover >= SIM_STEP) {
-      this.leftover -= SIM_STEP;
-      this.stepOnce(player, this.playerInput(player));
-    }
+    this.reactAll(
+      this.match.advance(dt, () => this.playerInput(player)),
+      player,
+    );
   }
 
   /** Play-testing aid: runs the rules ahead with a fixed input instead of waiting for real time. */
   fastForward(seconds: number, input: CatInput): void {
     const player = this.player;
-    if (player === null) {
+    if (player === null || this.match === null) {
       return;
     }
-    const steps = Math.round(seconds / SIM_STEP);
-    for (let i = 0; i < steps; i += 1) {
-      this.stepOnce(player, input);
-    }
+    this.reactAll(this.match.fastForward(seconds, input), player);
   }
 
-  private stepOnce(player: CatId, mine: CatInput): void {
-    const rival = otherCat(player);
-    const ai = aiInput(this.state, rival, this.world, this.settings.sim, this.navs[rival]);
-    const inputs: Inputs =
-      player === "brother" ? { brother: mine, sister: ai } : { brother: ai, sister: mine };
-    this.state = step(this.state, inputs, SIM_STEP, this.world, this.settings.sim);
-    this.state.events.forEach((event) => {
+  private reactAll(events: readonly GameEvent[], player: CatId): void {
+    events.forEach((event) => {
       this.react(event, player);
     });
   }
