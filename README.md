@@ -1,7 +1,7 @@
 # Cats Untitled
 
 A browser game: play as Aragorn or Arwen, two black cats in their old house, and nap on contested spots to
-score. Nothing to install to play; it runs from a web page.
+score. Play the computer, or send a friend a room code and play each other. Nothing to install to play; it runs from a web page.
 
 ```bash
 pnpm install
@@ -14,6 +14,8 @@ pnpm build    # static site in dist/
 
 - [How to play](docs/how-to-play.md): the cats, controls, scoring, abilities and mischief lists.
 - [Code tour](docs/code-tour.md): how the code is organised and where to make common changes.
+- [Multiplayer](docs/multiplayer.md): room-code play with a friend, no server; how it works and how to reuse
+  it in another project.
 - [Plan](docs/plan.md): milestones, what is built and what is not.
 - [Asset credits](docs/credits.md): where the models came from.
 

@@ -1,6 +1,7 @@
 # How to play
 
-Two black cats, brother and sister, share a house. You play one; the computer plays the other. Whoever has
+Two black cats, brother and sister, share a house. You play one; the computer or a friend plays the other.
+Whoever has
 the most points when the three-minute round ends wins. Either way, both cats curl up together at bedtime.
 
 Every number on this page comes from `config.toml` and can be changed there.
@@ -26,6 +27,17 @@ Every number on this page comes from `config.toml` and can be changed there.
 Tapping or clicking a spot sends your cat there by the shortest route around the furniture. Tap a ring
 to go and sit in it. Pressing a movement key cancels the walk. On an iPhone the game works in either
 orientation; landscape shows more of the house. The phone's silent switch also silences the game.
+
+## Playing with a friend
+
+1. One of you picks **Play with a friend**, then the cat they want to be. A room code appears, such as `K7QX`.
+2. Send the friend the code, or tap **Copy invite link** and send that.
+3. The friend opens the link, or picks **Play with a friend** and types the code, then taps **Join**. They
+   play the other cat, and the round starts.
+
+Whoever opened the room runs the game, so keep that page open and in front; if it closes, the round ends for
+both. If the friend leaves, the computer takes over their cat. After a round, the person who opened the room
+can start another. It works on most home networks; see [Multiplayer](multiplayer.md) for when it does not.
 
 ## Scoring
 

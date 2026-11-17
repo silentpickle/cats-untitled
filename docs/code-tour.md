@@ -18,19 +18,24 @@ src/house/ (layout data) ──► src/sim/ (rules, no drawing) ──► src/ma
 The one rule that holds it together: **`src/sim/` knows nothing about drawing, sound or the browser.** It
 takes a state and the two cats' inputs and returns the next state. Everything else reads that state.
 
-| Folder        | Job                                                                                    |
-| ------------- | -------------------------------------------------------------------------------------- |
-| `src/sim/`    | The rules and the computer opponent. Pure functions, fully unit tested.                |
-| `src/house/`  | The house as data, and `toWorld.ts`, which turns it into what the rules need.          |
-| `src/render/` | Three.js: the stage, the house, the cats, the rings, the knockable things, the camera. |
-| `src/input/`  | Keyboard, tap-to-move, and the on-screen ability button.                               |
-| `src/ui/`     | The HTML overlay: scoreboard, mischief list, ability pill, select and result screens.  |
-| `src/audio/`  | Sounds synthesized with Web Audio. No audio files.                                     |
-| `src/main.ts` | Loads everything and runs the frame loop.                                              |
+| Folder         | Job                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------- |
+| `src/sim/`     | The rules and the computer opponent. Pure functions, fully unit tested.                |
+| `src/house/`   | The house as data, and `toWorld.ts`, which turns it into what the rules need.          |
+| `src/render/`  | Three.js: the stage, the house, the cats, the rings, the knockable things, the camera. |
+| `src/input/`   | Keyboard, tap-to-move, and the on-screen ability button.                               |
+| `src/ui/`      | The HTML overlay: scoreboard, mischief list, ability pill, select and result screens.  |
+| `src/audio/`   | Sounds synthesized with Web Audio. No audio files.                                     |
+| `src/play/`    | The fixed-step loop (`LocalMatch`) behind the `Match` interface the frame loop uses.   |
+| `src/net/`     | Room codes and host/guest sessions over Trystero. Game-agnostic; reusable as is.       |
+| `src/netplay/` | This game's online glue: wire decoders, host and guest matches, the lobby.             |
+| `src/main.ts`  | Loads everything and runs the frame loop.                                              |
 
 ## One frame
 
-1. `main.ts` reads the player's input and asks `aiInput` for the other cat's.
+1. `main.ts` reads the player's input and hands it to the current `Match`. Solo, the other cat's input comes
+   from `aiInput`; when hosting, from the friend over the network. A guest does not run steps 2–3 at all: it
+   draws the host's snapshots. See [Multiplayer](multiplayer.md).
 2. `step` (in `src/sim/step.ts`) advances the rules by 1/60 of a second and returns a new state, with a list
    of `events` for what just happened (a capture, a swat, a treat).
 3. `feedback.ts` turns each event into a message and sounds.
@@ -54,6 +59,8 @@ its own file.
 | What is said or played when something happens | `src/feedback.ts`                                                        |
 | The cats' names                               | `CAT_NAMES` in `src/ui/screens.ts`, and the labels in `index.html`       |
 | Colours of the couch, rugs, counters          | `COLORS` in `src/house/mainFloor.ts`                                     |
+| Online send rates, room code length           | `[net]` in `config.toml`                                                 |
+| What crosses the wire                         | `src/netplay/wire.ts`, then bump `PROTOCOL_VERSION` in `protocol.ts`     |
 
 ## The house as data
 
