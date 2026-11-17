@@ -29,7 +29,8 @@ const FLOORS: Record<FloorMaterial, number> = {
   stairwell: 0x2f2b29,
   sunbeam: 0xf6e7a6,
 };
-const FLOOR_LAYER_STEP = 0.004;
+/** Floors draw before everything else, later areas on top of earlier ones. */
+const FLOOR_DRAW_ORDER = -1000;
 const OPENING_GAP = 0.02;
 
 const DEFAULT_BOX_COLOR = 0xb0a090;
@@ -41,15 +42,27 @@ interface Band {
   readonly material: THREE.Material;
 }
 
+/**
+ * Every floor area lies flat at height 0. Overlapping areas are ordered by drawing them first, in
+ * layer order, each one painting over the last. Stacking them a few millimetres apart instead lifted the top
+ * layers above the rugs and the see-through nap rings, which then flickered in and out of the floor.
+ */
 function floorMesh(rect: Rect, material: FloorMaterial, layer: number): THREE.Mesh {
   const width = rect.maxX - rect.minX;
   const depth = rect.maxZ - rect.minZ;
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(width, depth),
-    new THREE.MeshStandardMaterial({ color: FLOORS[material], roughness: 1 }),
+    // Always passing (rather than switching the test off) still writes depth, so nothing under the
+    // floor shows through it.
+    new THREE.MeshStandardMaterial({
+      color: FLOORS[material],
+      roughness: 1,
+      depthFunc: THREE.AlwaysDepth,
+    }),
   );
+  mesh.renderOrder = FLOOR_DRAW_ORDER + layer;
   mesh.rotation.x = -QUARTER_TURN;
-  mesh.position.set(rect.minX + width * HALF, layer * FLOOR_LAYER_STEP, rect.minZ + depth * HALF);
+  mesh.position.set(rect.minX + width * HALF, 0, rect.minZ + depth * HALF);
   mesh.receiveShadow = true;
   return mesh;
 }
