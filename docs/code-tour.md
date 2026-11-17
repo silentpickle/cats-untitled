@@ -104,4 +104,5 @@ In the browser console, `window.catsGame` exposes two helpers:
 
 - `catsGame.snapshot()` returns the current player and rules state.
 - `catsGame.fastForward(seconds, input)` runs the rules ahead with a fixed input, for example
-  `catsGame.fastForward(5, { move: { x: 1, z: 0 }, swat: false, stealth: false })`.
+  `catsGame.fastForward(5, { move: { x: 1, z: 0 }, swat: false, stealth: false })`. Solo games only; it does
+  nothing while hosting or joining a friend's room.
