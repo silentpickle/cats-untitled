@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Vec2 } from "./types";
 import { buildNavGrid } from "./nav";
+import { buildWalkGrid } from "./navGrid";
 import { step } from "./step";
 import { WALK_ARRIVE_METRES, planWalk, walkInput } from "./walkTo";
 import { IDLE_INPUT } from "./stateOps";
 import { distance, pointInRect } from "./geometry";
 import {
+  BOUNDS,
   OPEN_EAST,
   OPEN_WEST,
   TABLE,
@@ -25,9 +27,13 @@ const NUDGE = 0.01;
 
 const nav = buildNavGrid(TEST_WORLD, "brother", TEST_SETTINGS);
 
+/** Closes the gap at the top of the wall, so the east half cannot be reached from the west. */
+const SEAL = { minX: WALL.minX, minZ: WALL.maxZ, maxX: WALL.maxX, maxZ: BOUNDS.maxZ };
+const sealed = buildWalkGrid(BOUNDS, TEST_SETTINGS.cats.brother.radius, [WALL, SEAL, TABLE]);
+
 /** Walks the brother toward `to` until he stops; returns where he ended and whether he hit the wall. */
 function walk(from: Vec2, to: Vec2): { readonly end: Vec2; readonly enteredWall: boolean } {
-  const goal = planWalk(nav, to);
+  const goal = planWalk(nav, from, to);
   if (goal === undefined) throw new Error("no walkable cell in the test world");
   let state = withCat(quietGame(), "brother", { pos: from });
   let enteredWall = false;
@@ -49,7 +55,7 @@ describe("walking to a tapped spot", () => {
   });
 
   it("tap_inside_furniture_goes_to_the_nearest_standable_spot", () => {
-    const goal = planWalk(nav, INSIDE_TABLE);
+    const goal = planWalk(nav, OPEN_EAST, INSIDE_TABLE);
     expect(goal).toBeDefined();
     expect(pointInRect(goal?.target ?? INSIDE_TABLE, TABLE)).toBe(false);
     const { end } = walk(OPEN_EAST, INSIDE_TABLE);
@@ -57,16 +63,22 @@ describe("walking to a tapped spot", () => {
   });
 
   it("tap_outside_the_house_stays_inside", () => {
-    const goal = planWalk(nav, OUTSIDE_HOUSE);
+    const goal = planWalk(nav, OPEN_WEST, OUTSIDE_HOUSE);
     expect(goal?.target.x).toBeGreaterThan(0);
   });
 
   it("no_movement_once_within_arrival_distance", () => {
-    const goal = planWalk(nav, OPEN_EAST);
+    const goal = planWalk(nav, OPEN_WEST, OPEN_EAST);
     if (goal === undefined) throw new Error("no walkable cell in the test world");
     const justInside = { x: OPEN_EAST.x + WALK_ARRIVE_METRES, z: OPEN_EAST.z };
     const justOutside = { x: OPEN_EAST.x + WALK_ARRIVE_METRES + NUDGE, z: OPEN_EAST.z };
     expect(walkInput(nav, goal, justInside)).toEqual({ x: 0, z: 0 });
     expect(walkInput(nav, goal, justOutside)).not.toEqual({ x: 0, z: 0 });
+  });
+
+  it("tap_beyond_reach_stops_on_the_near_side", () => {
+    const goal = planWalk(sealed, OPEN_WEST, OPEN_EAST);
+    if (goal === undefined) throw new Error("no walkable cell in the test world");
+    expect(goal.target.x).toBeLessThan(WALL.minX);
   });
 });
