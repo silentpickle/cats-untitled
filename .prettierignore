@@ -4,3 +4,5 @@ pnpm-lock.yaml
 assets
 public
 cats_untitled_house
+# Golden files are compared byte for byte by tests; formatting them would break the comparison.
+**/__golden__/
