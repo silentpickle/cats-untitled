@@ -1,4 +1,4 @@
-import type { MessageHandler, NetChannel, NetRoom } from "./room";
+import type { MessageHandler, NetChannel, NetRoom, NetTrouble, RelayCount } from "./room";
 
 /**
  * Rooms that live in one page, for tests and local play-testing. Every message goes through JSON like it
@@ -11,13 +11,21 @@ interface Member {
   readonly channels: Map<string, MessageHandler>;
   joinHandler: (peerId: string) => void;
   leaveHandler: (peerId: string) => void;
+  troubleHandler: (trouble: NetTrouble) => void;
 }
+
+/** A memory room has one perfect "relay": the hub. */
+const MEMORY_RELAYS: RelayCount = { open: 1, connecting: 0, total: 1 };
 
 function later(task: () => void): void {
   queueMicrotask(task);
 }
 
 function ignorePeer(): void {
+  // Nobody is listening yet.
+}
+
+function ignoreTrouble(): void {
   // Nobody is listening yet.
 }
 
@@ -31,6 +39,7 @@ export class MemoryHub {
       channels: new Map(),
       joinHandler: ignorePeer,
       leaveHandler: ignorePeer,
+      troubleHandler: ignoreTrouble,
     };
     const others = [...this.members.values()];
     this.members.set(peerId, member);
@@ -38,6 +47,17 @@ export class MemoryHub {
       this.announce(member, others);
     });
     return this.roomFor(member);
+  }
+
+  /** Makes the room of `peerId` report a connection problem, as a real transport would. */
+  reportTrouble(peerId: string, trouble: NetTrouble): void {
+    const member = this.members.get(peerId);
+    if (member === undefined) {
+      return;
+    }
+    later(() => {
+      member.troubleHandler(trouble);
+    });
   }
 
   private announce(member: Member, others: readonly Member[]): void {
@@ -91,6 +111,10 @@ export class MemoryHub {
       onPeerLeave: (handler) => {
         member.leaveHandler = handler;
       },
+      onTrouble: (handler) => {
+        member.troubleHandler = handler;
+      },
+      relays: () => MEMORY_RELAYS,
       leave: () => {
         this.remove(member);
       },
