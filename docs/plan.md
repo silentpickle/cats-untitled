@@ -2,11 +2,13 @@
 
 A browser game for a kid who misses his cats: play as one of two black cats in their old house, napping on contested spots to score.
 First pass goal: get close with what we have (ten old photos, a stock cat), built so better photos and a floor
-plan sketch can be dropped in later without rewriting code.
+plan can be dropped in later without rewriting code. The floor plan and newer photos have now arrived, and the
+main floor is rebuilt from them.
 
 ## What we have
 
-**Photos** (`cats_untitled_house/`, ten images) cover the main floor's open area only:
+**Old listing photos** (`cats_untitled_house/`, ten images) cover the main floor's open area only. They built
+the first layout (four quarters, 10 by 8 metres), which the floor plan below has replaced:
 
 | Area        | What the photos show                                                                                                                               |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -16,7 +18,16 @@ plan sketch can be dropped in later without rewriting code.
 | Kitchen     | U-shape with oak cabinets and white appliances, angled peninsula with two stools, door (garage or laundry), a pet bed on the counter               |
 | Exterior    | Brick ranch-style condo, two-car garage, a window in the gable above it                                                                            |
 
-**Not in the photos:** bedrooms, bathrooms, stairs, and the other floor. Those are placeholders in the first pass.
+**Not in the photos:** bedrooms, bathrooms, stairs, and the other floor. Those were placeholders in the first pass.
+
+**Floor plan:** a floor-plan drawing of a twin house gives the real layout, 11.4 by 12.1 metres: den with the
+dining table and balcony slider (north-west), one long living room with the fireplace and the TV above it
+(centre), kitchen with an island, laundry room with washer, dryer and pantry (south-west), a railed stairwell
+down to the basement, the foyer with the front door, and a bedroom wing on the east (primary bedroom, hall,
+walk-in closet, primary bath, second bath, second bedroom). The garage is drawn only as bare concrete outside
+the walls.
+
+**Newer photos** of the real house dress that layout.
 
 **Cat model:** Quaternius has two CC0 rigged, animated cats on poly.pizza (`/m/qKICY6xla2` and `/m/2f54vbV0In`),
 both in glTF. One model serves both cats: tinted black, scaled up and slowed for the brother, a white chest
@@ -35,7 +46,7 @@ status"). The first pass does not need it: headless Blender handles any format c
 | House     | Described as data (rooms, walls, furniture, points), not code       | New photos or a sketch change one data file                                     |
 | Furniture | Kenney Furniture Kit (CC0), boxes where the kit has no match        | One consistent style, quick to place                                            |
 | Opponent  | AI sibling, or a friend by room code                                | Online play is peer-to-peer with no server of ours; see `multiplayer.md`        |
-| Floors    | Main floor from photos; second floor is an invented bedroom level   | Stairs are a trigger that swaps floors                                          |
+| Floors    | Main floor from the floor plan; the basement comes later            | Stairs are a trigger that swaps floors                                          |
 | Hosting   | GitHub Pages, deployed from `main` by `.github/workflows/pages.yml` | Free, one link, no account needed to play; deploys itself on every merge        |
 
 ## Game rules (first pass)
@@ -69,18 +80,18 @@ complexity 15, max depth 2 and no magic numbers, Prettier, Vitest, and a pre-com
 
 ## Milestones
 
-| #   | Milestone               | Done when                                                                                               |
-| --- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
-| M0  | Scaffold                | Empty scene runs locally; lint, types, tests and pre-commit hook pass                                   |
-| M1  | Walkable main floor     | One cat walks the greybox main floor from the photos, collides with walls and furniture, camera follows |
-| M2  | Nap points              | Points capture and score, round timer and HUD work, round ends on a score screen                        |
-| M3  | Two cats                | Cat select screen; AI sibling contests points; swat, hide and bolt work                                 |
-| M4  | Dressed house           | Kit furniture replaces boxes; lighting, sunbeams, fireplace glow                                        |
-| M5  | Second floor and people | Stairs swap floors; wandering humans with laps and treats; night finale on the bed                      |
-| M6  | Mischief and sound      | Goose-style to-do list, purrs, meows, knocked-over cups                                                 |
-| M7  | Publish                 | Touch controls, load time checked, live on GitHub Pages                                                 |
+| #   | Milestone           | Done when                                                                                               |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------- |
+| M0  | Scaffold            | Empty scene runs locally; lint, types, tests and pre-commit hook pass                                   |
+| M1  | Walkable main floor | One cat walks the greybox main floor from the photos, collides with walls and furniture, camera follows |
+| M2  | Nap points          | Points capture and score, round timer and HUD work, round ends on a score screen                        |
+| M3  | Two cats            | Cat select screen; AI sibling contests points; swat, hide and bolt work                                 |
+| M4  | Dressed house       | Kit furniture replaces boxes; lighting, sunbeams, fireplace glow                                        |
+| M5  | Basement and people | Stairs swap floors; wandering humans with laps and treats; night finale on the bed                      |
+| M6  | Mischief and sound  | Goose-style to-do list, purrs, meows, knocked-over cups                                                 |
+| M7  | Publish             | Touch controls, load time checked, live on GitHub Pages                                                 |
 
-**"Close on what we have" is M0 to M4.** M5 onward waits on the floor plan sketch and newer photos.
+**"Close on what we have" is M0 to M4.** The floor plan and newer photos have arrived; the main floor is rebuilt from them.
 
 ## Orchestration
 
@@ -115,26 +126,26 @@ It becomes worth fixing at M4 if the stock cat needs reshaping (long fur for the
 
 ## Still needed
 
-| Item                                                            | Blocks             | Default until then                |
-| --------------------------------------------------------------- | ------------------ | --------------------------------- |
-| Go-ahead to download the cat model and furniture kit            | M1 with a real cat | Capsule stand-in                  |
-| The cats' names                                                 | Cat select screen  | "Brother" and "Sister"            |
-| What the player plays on (keyboard, tablet, phone)              | M7 controls        | Keyboard first, touch added at M7 |
-| Floor plan sketch, including what "top" and "bottom" floors are | M5                 | Invented bedroom level            |
-| Newer photos, especially the kid's room and the bed             | M5 finale          | Generic bedroom                   |
+| Item                                                 | Blocks             | Default until then                     |
+| ---------------------------------------------------- | ------------------ | -------------------------------------- |
+| Go-ahead to download the cat model and furniture kit | M1 with a real cat | Capsule stand-in                       |
+| The cats' names                                      | Cat select screen  | "Brother" and "Sister"                 |
+| What the player plays on (keyboard, tablet, phone)   | M7 controls        | Keyboard first, touch added at M7      |
+| A layout for the basement                            | M5                 | Not built; the stairs lead nowhere yet |
 
-## Status (2026-11-16)
+## Status (2026-11-17)
 
-Built for the main floor: both cats (Aragorn the brother, Arwen the sister), the computer sibling, nap
-points, treats, swat, hiding, scoring, the round clock, cat select and score screens, kit furniture tinted
+Built for the main floor, now laid out from the real floor plan with the bedroom wing: both cats (Aragorn
+the brother, Arwen the sister), the computer sibling, nap points, treats, swat, hiding, scoring, the round clock, cat select and score screens, kit furniture tinted
 to match the photos, keyboard and touch controls, a mischief list per cat, knockable things (cup, remote,
 toy mouse), synthesized sound, and two-player online play by room code (`multiplayer.md`). Published at <https://silentpickle.github.io/cats-untitled/>, redeployed on every push to `main`. Not
-started: the second floor, people, the bedtime ending.
+started: the basement, people, the bedtime ending.
 
 Known rough edges:
 
 - Cats walk through couch backs and pop onto seats and the counter; there is no jump animation yet.
-- Kitchen appliances on the cut-away south wall are seen from behind.
+- The stairs go down to a basement that is not built yet.
+- The garage is bare concrete outside the walls, with no garage around it.
 - The brother's "long hair" is only a wider body; the stock model has no fur.
 - Balance between the two computer cats swings a lot with small setting changes (`src/balance.test.ts`
   only guards against a shutout).

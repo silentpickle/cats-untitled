@@ -245,26 +245,26 @@
   ],
   "events": [
    {
-    "kind": "swat_missed",
-    "by": "brother"
-   },
-   {
     "kind": "stealth",
     "by": "sister"
    },
    {
-    "kind": "treat",
-    "treatId": "treat_tv",
-    "by": "sister"
+    "kind": "swat_missed",
+    "by": "brother"
    },
    {
     "kind": "knocked",
-    "knockableId": "remote",
-    "by": "sister"
+    "knockableId": "toy_mouse",
+    "by": "brother"
    },
    {
     "kind": "mischief",
-    "mischiefId": "knock_remote",
+    "mischiefId": "bat_mouse",
+    "by": "brother"
+   },
+   {
+    "kind": "treat",
+    "treatId": "treat_kitchen",
     "by": "sister"
    },
    {
@@ -272,14 +272,8 @@
     "by": "brother"
    },
    {
-    "kind": "treat",
-    "treatId": "treat_table",
-    "by": "sister"
-   },
-   {
-    "kind": "mischief",
-    "mischiefId": "table_treat",
-    "by": "sister"
+    "kind": "swat_missed",
+    "by": "brother"
    },
    {
     "kind": "swat_missed",
@@ -295,17 +289,8 @@
    },
    {
     "kind": "captured",
-    "pointId": "sunbeam",
+    "pointId": "food_bowl",
     "by": "sister"
-   },
-   {
-    "kind": "mischief",
-    "mischiefId": "claim_sunbeam",
-    "by": "sister"
-   },
-   {
-    "kind": "swat_missed",
-    "by": "brother"
    }
   ],
   "final": {
@@ -315,8 +300,8 @@
     "brother": {
      "id": "brother",
      "pos": {
-      "x": 7.784009742330319,
-      "z": 3.600511742044734
+      "x": 6.32288538560699,
+      "z": 4.798240916476341
      },
      "facing": 3.141592653589793,
      "moving": true,
@@ -327,30 +312,30 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 0,
-     "score": 0
+     "score": 17
     },
     "sister": {
      "id": "sister",
      "pos": {
-      "x": 2.5971793391715163,
-      "z": 4.602235794672168
+      "x": 1.5772906789422638,
+      "z": 6.990876652177042
      },
-     "facing": 0.10164378205903447,
-     "moving": false,
-     "napping": true,
+     "facing": -0.3088032000129378,
+     "moving": true,
+     "napping": false,
      "hidden": false,
      "stunnedFor": 0,
      "fleeFor": 0,
      "swatCooldown": 0,
      "stealthFor": 0,
-     "stealthCooldown": 2.1999999999999718,
-     "score": 58.48333333333325
+     "stealthCooldown": 1.9833333333333059,
+     "score": 5.333333333333332
     }
    },
    "points": [
     {
      "id": "sunbeam",
-     "owner": "sister",
+     "owner": null,
      "capturer": null,
      "progress": 0
     },
@@ -369,11 +354,17 @@
     {
      "id": "counter_bed",
      "owner": null,
-     "capturer": "sister",
-     "progress": 0.07666666666666666
+     "capturer": null,
+     "progress": 0
     },
     {
      "id": "food_bowl",
+     "owner": "sister",
+     "capturer": null,
+     "progress": 0
+    },
+    {
+     "id": "dryer",
      "owner": null,
      "capturer": null,
      "progress": 0
@@ -385,7 +376,13 @@
      "progress": 0
     },
     {
-     "id": "cushions",
+     "id": "big_bed",
+     "owner": null,
+     "capturer": null,
+     "progress": 0
+    },
+    {
+     "id": "kid_bed",
      "owner": null,
      "capturer": null,
      "progress": 0
@@ -394,21 +391,31 @@
    "treats": [
     {
      "id": "treat_kitchen",
+     "available": false,
+     "respawnIn": 13.71666666666678
+    },
+    {
+     "id": "treat_table",
      "available": true,
      "respawnIn": 0
     },
     {
-     "id": "treat_table",
-     "available": false,
-     "respawnIn": 14.566666666666823
-    },
-    {
      "id": "treat_tv",
-     "available": false,
-     "respawnIn": 13.616666666666775
+     "available": true,
+     "respawnIn": 0
     },
     {
      "id": "treat_foyer",
+     "available": true,
+     "respawnIn": 0
+    },
+    {
+     "id": "treat_closet",
+     "available": true,
+     "respawnIn": 0
+    },
+    {
+     "id": "treat_bedroom",
      "available": true,
      "respawnIn": 0
     }
@@ -421,13 +428,13 @@
     },
     {
      "id": "remote",
-     "knockedBy": "sister",
-     "resetIn": 18.683333333333692
+     "knockedBy": null,
+     "resetIn": 0
     },
     {
      "id": "toy_mouse",
-     "knockedBy": null,
-     "resetIn": 0
+     "knockedBy": "brother",
+     "resetIn": 17.983333333333732
     }
    ],
    "mischief": [
@@ -452,8 +459,8 @@
     {
      "id": "bat_mouse",
      "cat": "brother",
-     "done": false,
-     "progress": 0
+     "done": true,
+     "progress": 1
     },
     {
      "id": "own_four",
@@ -470,20 +477,20 @@
     {
      "id": "table_treat",
      "cat": "sister",
-     "done": true,
-     "progress": 1
+     "done": false,
+     "progress": 0
     },
     {
      "id": "knock_remote",
      "cat": "sister",
-     "done": true,
-     "progress": 1
+     "done": false,
+     "progress": 0
     },
     {
      "id": "claim_sunbeam",
      "cat": "sister",
-     "done": true,
-     "progress": 1
+     "done": false,
+     "progress": 0
     },
     {
      "id": "claim_counter_bed",
@@ -745,18 +752,23 @@
     "by": "sister"
    },
    {
-    "kind": "treat",
-    "treatId": "treat_tv",
+    "kind": "knocked",
+    "knockableId": "toy_mouse",
     "by": "sister"
    },
    {
-    "kind": "swatted",
-    "by": "brother",
-    "target": "sister"
+    "kind": "captured",
+    "pointId": "couch",
+    "by": "brother"
    },
    {
     "kind": "mischief",
-    "mischiefId": "swat_arwen",
+    "mischiefId": "claim_couch",
+    "by": "brother"
+   },
+   {
+    "kind": "treat",
+    "treatId": "treat_tv",
     "by": "brother"
    },
    {
@@ -772,25 +784,25 @@
     "brother": {
      "id": "brother",
      "pos": {
-      "x": 9.139095485096608,
-      "z": 2.491507540842716
+      "x": 4.068662397036189,
+      "z": 2.0738839357020615
      },
-     "facing": 1.0558467922530508,
-     "moving": false,
-     "napping": true,
+     "facing": -0.8293009256051644,
+     "moving": true,
+     "napping": false,
      "hidden": false,
      "stunnedFor": 0,
      "fleeFor": 0,
-     "swatCooldown": 0.9333333333333438,
+     "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 0,
-     "score": 17.28333333333331
+     "score": 24.299999999999986
     },
     "sister": {
      "id": "sister",
      "pos": {
-      "x": 5.156860050190508,
-      "z": 4.6985088225964144
+      "x": 6.274953078410523,
+      "z": 4.94828910908947
      },
      "facing": 3.141592653589793,
      "moving": true,
@@ -801,7 +813,7 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 1.9833333333333059,
-     "score": 5.300000000000015
+     "score": 2
     }
    },
    "points": [
@@ -819,9 +831,9 @@
     },
     {
      "id": "couch",
-     "owner": null,
-     "capturer": "brother",
-     "progress": 0.20583333333333353
+     "owner": "brother",
+     "capturer": null,
+     "progress": 0
     },
     {
      "id": "counter_bed",
@@ -836,13 +848,25 @@
      "progress": 0
     },
     {
+     "id": "dryer",
+     "owner": null,
+     "capturer": null,
+     "progress": 0
+    },
+    {
      "id": "foyer_rug",
      "owner": null,
      "capturer": null,
      "progress": 0
     },
     {
-     "id": "cushions",
+     "id": "big_bed",
+     "owner": null,
+     "capturer": null,
+     "progress": 0
+    },
+    {
+     "id": "kid_bed",
      "owner": null,
      "capturer": null,
      "progress": 0
@@ -862,10 +886,20 @@
     {
      "id": "treat_tv",
      "available": false,
-     "respawnIn": 14.566666666666823
+     "respawnIn": 17.20000000000016
     },
     {
      "id": "treat_foyer",
+     "available": true,
+     "respawnIn": 0
+    },
+    {
+     "id": "treat_closet",
+     "available": true,
+     "respawnIn": 0
+    },
+    {
+     "id": "treat_bedroom",
      "available": true,
      "respawnIn": 0
     }
@@ -883,16 +917,16 @@
     },
     {
      "id": "toy_mouse",
-     "knockedBy": null,
-     "resetIn": 0
+     "knockedBy": "sister",
+     "resetIn": 18.433333333333707
     }
    ],
    "mischief": [
     {
      "id": "swat_arwen",
      "cat": "brother",
-     "done": true,
-     "progress": 1
+     "done": false,
+     "progress": 0
     },
     {
      "id": "knock_cup",
@@ -903,8 +937,8 @@
     {
      "id": "claim_couch",
      "cat": "brother",
-     "done": false,
-     "progress": 0
+     "done": true,
+     "progress": 1
     },
     {
      "id": "bat_mouse",
@@ -922,7 +956,7 @@
      "id": "tease_aragorn",
      "cat": "sister",
      "done": false,
-     "progress": 0.1199999999999999
+     "progress": 0
     },
     {
      "id": "table_treat",

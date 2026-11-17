@@ -53,7 +53,7 @@ export interface WallDef {
   readonly cutaway?: boolean;
 }
 
-export type FloorMaterial = "carpet" | "tile" | "sunbeam";
+export type FloorMaterial = "carpet" | "tile" | "wood" | "concrete" | "stairwell" | "sunbeam";
 
 export interface FloorAreaDef {
   readonly rect: Rect;

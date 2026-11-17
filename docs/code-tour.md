@@ -64,9 +64,12 @@ its own file.
 
 ## The house as data
 
-`mainFloor.ts` describes one floor in metres, with x running east and z running south toward the camera.
+`mainFloor.ts` describes the main floor in metres, with x running east and z running south toward the camera.
 
 - **Walls** are straight segments. `cutaway` walls are drawn as a low curb so the camera sees over them.
+  Inside walls and the south outside wall are cutaway; only the pillar wall behind the island is full height.
+- **Floors** are rectangles with a material: `wood`, `carpet`, `tile`, `concrete` (the garage),
+  `stairwell` (the stairs down) or `sunbeam`.
 - **Furniture** has a position, a size, and which way it faces. A piece is either a Kenney kit model (by
   name) stretched to fit that size, or a plain coloured box.
   - `blocks: "both"` stops both cats; `blocks: "brother"` lets Arwen under it.

@@ -8,13 +8,13 @@ Every number on this page comes from `config.toml` and can be changed there.
 
 ## The cats
 
-|               | Aragorn (brother)                             | Arwen (sister)                                   |
-| ------------- | --------------------------------------------- | ------------------------------------------------ |
-| Look          | Bigger and wider, rolls his shoulders walking | Smaller, a tiny white fleck on her chest         |
-| Speed         | 1.5 metres a second                           | 3.0 metres a second                              |
-| Claims a spot | in about 3.1 seconds                          | in about 3.5 seconds                             |
-| Ability       | **Swat**                                      | **Stealth**                                      |
-| Fits under    | nothing                                       | the coffee table, the dining table and the bench |
+|               | Aragorn (brother)                                 | Arwen (sister)                                                                     |
+| ------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Look          | Big and round, swaggers, naps flopped on his side | Smaller, a tiny white fleck on her chest, naps in a loaf                           |
+| Speed         | 2.0 metres a second                               | 3.0 metres a second                                                                |
+| Claims a spot | in about 2.0 seconds                              | in about 5.7 seconds                                                               |
+| Ability       | **Swat**                                          | **Stealth**                                                                        |
+| Fits under    | nothing                                           | the coffee table, the dining table, the foyer bench, the closet shelf and the desk |
 
 ## Controls
 
@@ -51,23 +51,24 @@ can start another. It works on most home networks; see [Multiplayer](multiplayer
 
 ### Nap spots
 
-There are seven, each marked with a ring: the sunbeam, the fireplace, the couch, the bed on the counter, the
-food bowl, the shag rug and the floor cushions.
+There are nine, each marked with a ring: the sunbeam, the fireplace, the couch, the bed on the counter, the
+food bowl, the warm dryer, the shag rug, the big bed and the kid's bed.
 
 - **Claiming:** sit still inside a ring and it fills with your colour. Moving stops the fill, and the fill
   drains away if you leave.
 - **Holding:** a spot you own keeps paying whether or not you stay on it, until the other cat claims it.
 - **Contested:** if both cats sit on the same ring, nothing happens until one leaves.
-- **Colours:** orange is Aragorn, blue is Arwen, white is free. The dots under the clock show all seven.
+- **Colours:** orange is Aragorn, blue is Arwen, white is free. The dots under the clock show all nine.
 
 ### Treats
 
-Four gold treats sit around the house. Walk over one to eat it; it comes back 20 seconds later. One is under
-the dining table, where only Arwen can reach.
+Six gold treats sit around the house: in the kitchen, under the dining table, in front of the TV, in the
+foyer, in the walk-in closet and in the kid's bedroom. Walk over one to eat it; it comes back 20 seconds
+later. The one under the dining table is where only Arwen can reach.
 
 ### Knocking things over
 
-A coffee cup on the counter, the TV remote on the ottoman and a toy mouse in the foyer. Brush past one and it
+A coffee cup on the counter, the TV remote on the ottoman and a toy mouse on the living-room floor. Brush past one and it
 ends up on the floor. Someone puts it back after 25 seconds, so it can be knocked again.
 
 ## Abilities
@@ -87,7 +88,8 @@ ends up on the floor. Someone puts it back after 25 seconds, so it can be knocke
 
 ### Arwen: hiding
 
-Under the coffee table, the dining table or the foyer bench she cannot be swatted, and Aragorn cannot follow.
+Under the coffee table, the dining table, the foyer bench, the walk-in closet's shelf or the kid's desk she
+cannot be swatted, and Aragorn cannot follow.
 While she is hidden within 3 metres of him she scores for teasing him.
 
 ## Mischief lists
@@ -104,6 +106,18 @@ Each cat has five extra goals, shown at the top left. Each is worth 15 points, o
 
 ## The house
 
-The main floor of the old house, from the listing photos: living room with the fireplace and shuttered
-windows, dining nook by the sliding door, kitchen with the peninsula, and the foyer. Cats can hop onto the
-couches, the ottoman, the floor cushions and the kitchen peninsula.
+The main floor of the real house, laid out from the floor plan and dressed from photos. It is one floor, about
+11 by 12 metres:
+
+- **Den** (north-west): the dining table, the balcony sliding door with a sunbeam, and the blue cat tree.
+- **Living room** (centre): one long room with the fireplace, the TV above it, curtained windows and two
+  couches.
+- **Kitchen**: an island whose counter is backed by a half wall, which turns into a full-height pillar wall
+  with a walkthrough to the living room.
+- **Laundry room** (south-west): washer, dryer and pantry.
+- **Foyer**: the front door, and a railed stairwell down to the basement, which is not built.
+- **Bedroom wing** (east): the primary bedroom, a hall, the walk-in closet, the primary bath, a second bath
+  and the kid's bedroom.
+
+The garage is only bare concrete outside the walls. Cats can hop onto the couches, the ottoman, the floor
+cushions, the island and its half wall, both perches of the cat tree, the washer and dryer, and both beds.

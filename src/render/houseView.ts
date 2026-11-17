@@ -9,10 +9,13 @@ const QUARTER_TURN = Math.PI * HALF;
 
 const WALLS = {
   height: 2.5,
-  curbHeight: 0.18,
+  curbHeight: 0.4,
   sillHeight: 0.9,
   headerStart: 2.05,
-  color: 0xefe8da,
+  railHeight: 0.08,
+  upperColor: 0xc9cfdb,
+  lowerColor: 0x858a99,
+  railColor: 0xf7f5f0,
   doorColor: 0xfaf7f0,
   glassColor: 0xcfeaff,
   glassGlow: 0.9,
@@ -20,7 +23,10 @@ const WALLS = {
 
 const FLOORS: Record<FloorMaterial, number> = {
   carpet: 0xd9cfbd,
-  tile: 0xcdbfa6,
+  tile: 0xb9b3a6,
+  wood: 0x7a4f35,
+  concrete: 0x77787c,
+  stairwell: 0x2f2b29,
   sunbeam: 0xf6e7a6,
 };
 const FLOOR_LAYER_STEP = 0.004;
@@ -50,10 +56,16 @@ function floorMesh(rect: Rect, material: FloorMaterial, layer: number): THREE.Me
 
 function wallBands(kind: WallKind, mats: WallMaterials): Band[] {
   const header: Band = { from: WALLS.headerStart, to: WALLS.height, material: mats.wall };
+  const railTop = WALLS.sillHeight + WALLS.railHeight;
   const table: Record<WallKind, Band[]> = {
-    wall: [{ from: 0, to: WALLS.height, material: mats.wall }],
+    // Two-tone paint with a white chair rail, as in the photos of the dining nook.
+    wall: [
+      { from: 0, to: WALLS.sillHeight, material: mats.lower },
+      { from: WALLS.sillHeight, to: railTop, material: mats.rail },
+      { from: railTop, to: WALLS.height, material: mats.wall },
+    ],
     window: [
-      { from: 0, to: WALLS.sillHeight, material: mats.wall },
+      { from: 0, to: WALLS.sillHeight, material: mats.lower },
       { from: WALLS.sillHeight, to: WALLS.headerStart, material: mats.glass },
       header,
     ],
@@ -64,19 +76,24 @@ function wallBands(kind: WallKind, mats: WallMaterials): Band[] {
 }
 
 function curbBands(kind: WallKind, mats: WallMaterials): Band[] {
-  const material = kind === "door" ? mats.door : mats.wall;
+  const material = kind === "door" ? mats.door : mats.lower;
   return [{ from: 0, to: WALLS.curbHeight, material }];
 }
 
 interface WallMaterials {
+  /** Paint above the chair rail. */
   readonly wall: THREE.Material;
+  readonly lower: THREE.Material;
+  readonly rail: THREE.Material;
   readonly door: THREE.Material;
   readonly glass: THREE.Material;
 }
 
 function wallMaterials(): WallMaterials {
   return {
-    wall: new THREE.MeshStandardMaterial({ color: WALLS.color, roughness: 1 }),
+    wall: new THREE.MeshStandardMaterial({ color: WALLS.upperColor, roughness: 1 }),
+    lower: new THREE.MeshStandardMaterial({ color: WALLS.lowerColor, roughness: 1 }),
+    rail: new THREE.MeshStandardMaterial({ color: WALLS.railColor, roughness: 0.7 }),
     door: new THREE.MeshStandardMaterial({ color: WALLS.doorColor, roughness: 0.6 }),
     glass: new THREE.MeshStandardMaterial({
       color: WALLS.glassColor,
