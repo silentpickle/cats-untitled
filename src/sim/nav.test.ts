@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { Vec2 } from "./types";
 import { buildNavGrid } from "./nav";
-import { cellAt } from "./navGrid";
-import { fieldDistance } from "./distanceField";
+import { NOT_FOUND, buildWalkGrid, cellAt } from "./navGrid";
+import { buildField, entryCell, fieldDistance } from "./distanceField";
 import { steerAlong } from "./steer";
 import { distance, rectCenter } from "./geometry";
-import { BOWL, COUCH, TEST_SETTINGS, TEST_WORLD, WALL } from "./testFixtures";
+import { BOUNDS, BOWL, COUCH, TEST_SETTINGS, TEST_WORLD, WALL } from "./testFixtures";
 
 const BROTHER_NAV = buildNavGrid(TEST_WORLD, "brother", TEST_SETTINGS);
 const SISTER_NAV = buildNavGrid(TEST_WORLD, "sister", TEST_SETTINGS);
 /** West of the wall, level with the bowl on the other side. */
 const WEST_OF_WALL: Vec2 = { x: 4, z: 1 };
+/** A wall across the whole house: nothing west of it can get east of it. */
+const FULL_WALL = { minX: 5.8, minZ: 0, maxX: 6.2, maxZ: 10 };
+const WEST_BESIDE_WALL: Vec2 = { x: 5.55, z: 5 };
+const EAST_ROOM: Vec2 = { x: 9, z: 5 };
 /** The detour over the wall's top end is at least this many metres longer than flying straight. */
 const DETOUR_METRES = 4;
 
@@ -41,5 +45,12 @@ describe("nav", () => {
     expect(walk).toBeGreaterThan(distance(WEST_OF_WALL, BOWL) + DETOUR_METRES);
     const heading = steerAlong(BROTHER_NAV, field, WEST_OF_WALL);
     expect(heading.z).toBeGreaterThan(0);
+  });
+
+  it("N1_cut_off_cat", () => {
+    const grid = buildWalkGrid(BOUNDS, TEST_SETTINGS.cats.brother.radius, [FULL_WALL]);
+    const field = buildField(grid, EAST_ROOM);
+    expect(entryCell(grid, field, WEST_BESIDE_WALL)).toBe(NOT_FOUND);
+    expect(fieldDistance(grid, field, WEST_BESIDE_WALL)).toBe(Infinity);
   });
 });
