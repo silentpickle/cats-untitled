@@ -1,7 +1,8 @@
 # Cats Untitled
 
 A browser game: play as Aragorn or Arwen, two black cats in their old house, and nap on contested spots to
-score. Play the computer, or send a friend a room code and play each other. Nothing to install to play; it runs from a web page.
+score. Play the computer, or send a friend a room code and play each other. Nothing to install to play; it runs from a web page:
+**<https://silentpickle.github.io/cats-untitled/>**
 
 ```bash
 pnpm install
