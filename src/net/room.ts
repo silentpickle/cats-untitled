@@ -17,6 +17,28 @@ export interface NetChannel {
   onMessage(handler: MessageHandler): void;
 }
 
+/**
+ * Something the transport noticed that the player should hear about.
+ * - `unreachable`: a peer was found through matchmaking, but the direct connection to it failed. Usually
+ *   a strict network on one side; a TURN relay or another network fixes it.
+ * - `refused`: the peer turned the connection away (for example a wrong room password).
+ */
+export interface NetTrouble {
+  readonly kind: "unreachable" | "refused";
+  /** The transport's own wording, for reports. Not meant for players. */
+  readonly detail: string;
+}
+
+/**
+ * How many matchmaking relays this page is talking to: `open` answer now, `connecting` are still being
+ * reached. `total` 0 means the transport has none (yet).
+ */
+export interface RelayCount {
+  readonly open: number;
+  readonly connecting: number;
+  readonly total: number;
+}
+
 export interface NetRoom {
   /** This browser's id in the room, as other peers see it. */
   readonly selfId: string;
@@ -24,6 +46,10 @@ export interface NetRoom {
   channel(name: string): NetChannel;
   onPeerJoin(handler: (peerId: string) => void): void;
   onPeerLeave(handler: (peerId: string) => void): void;
+  /** Replaces the handler for connection problems the transport reports. */
+  onTrouble(handler: (trouble: NetTrouble) => void): void;
+  /** Matchmaking relays reachable right now. */
+  relays(): RelayCount;
   /** Disconnects from every peer and stops looking for new ones. */
   leave(): void;
 }

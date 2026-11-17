@@ -8,7 +8,13 @@ export interface LobbyHandlers {
   onHost(cat: CatId): void;
   onJoin(code: string): void;
   onBack(): void;
+  onCheckNetwork(): void;
+  /** The troubleshooting report to copy. */
+  report(): string;
 }
+
+const CHECK_LABEL = "Check my connection";
+const REPORT_LABEL = "Copy report";
 
 function hostCat(button: HTMLButtonElement): CatId | null {
   const cat = button.dataset.host;
@@ -24,6 +30,11 @@ export class Lobby {
   private readonly status = element("lobby-status", HTMLElement);
   private readonly input = element("join-code", HTMLInputElement);
   private readonly copy = element("copy-link", HTMLButtonElement);
+  private readonly help = element("lobby-help", HTMLDetailsElement);
+  private readonly relayStatus = element("relay-status", HTMLElement);
+  private readonly advice = element("net-advice", HTMLUListElement);
+  private readonly check = element("check-network", HTMLButtonElement);
+  private readonly copyReport = element("copy-report", HTMLButtonElement);
   private link = "";
 
   constructor(
@@ -43,7 +54,13 @@ export class Lobby {
       this.submitJoin();
     });
     this.copy.addEventListener("click", () => {
-      this.copyLink();
+      this.copyText(this.link, this.copy, "Copy invite link");
+    });
+    this.check.addEventListener("click", () => {
+      handlers.onCheckNetwork();
+    });
+    this.copyReport.addEventListener("click", () => {
+      this.copyText(handlers.report(), this.copyReport, REPORT_LABEL);
     });
     element("lobby-back", HTMLButtonElement).addEventListener("click", () => {
       handlers.onBack();
@@ -56,7 +73,31 @@ export class Lobby {
     this.start.hidden = false;
     this.wait.hidden = true;
     this.input.value = code;
+    this.help.hidden = true;
+    this.help.open = false;
     this.say(code === "" ? "" : "Tap Join to play with your friend.");
+  }
+
+  /**
+   * Updates the "Trouble connecting?" panel. `urgent` opens it, for problems the player must act on.
+   */
+  showHelp(relayLine: string, advice: readonly string[], urgent: boolean): void {
+    this.help.hidden = false;
+    this.help.open ||= urgent;
+    this.relayStatus.textContent = relayLine;
+    this.advice.replaceChildren(
+      ...advice.map((line) => {
+        const item = document.createElement("li");
+        item.textContent = line;
+        return item;
+      }),
+    );
+  }
+
+  /** While a network check runs, its button says so and cannot be pressed again. */
+  checking(busy: boolean): void {
+    this.check.disabled = busy;
+    this.check.textContent = busy ? "Checking…" : CHECK_LABEL;
   }
 
   /** Room open: show the code big, and offer the invite link. */
@@ -86,17 +127,17 @@ export class Lobby {
     this.handlers.onJoin(code);
   }
 
-  /** The clipboard can refuse (no permission, insecure page); then show the link to copy by hand. */
-  private copyLink(): void {
-    navigator.clipboard.writeText(this.link).then(
+  /** The clipboard can refuse (no permission, insecure page); then show the text to copy by hand. */
+  private copyText(text: string, button: HTMLButtonElement, label: string): void {
+    navigator.clipboard.writeText(text).then(
       () => {
-        this.copy.textContent = "Copied!";
+        button.textContent = "Copied!";
         window.setTimeout(() => {
-          this.copy.textContent = "Copy invite link";
+          button.textContent = label;
         }, COPIED_MS);
       },
       () => {
-        this.say(this.link);
+        this.say(text);
       },
     );
   }

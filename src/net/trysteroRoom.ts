@@ -1,5 +1,6 @@
-import { joinRoom, selfId, type MessageAction } from "trystero";
-import type { JoinRoom, MessageHandler, NetChannel, NetRoom } from "./room";
+import { getRelaySockets, joinRoom, selfId, type MessageAction } from "trystero";
+import { classifyJoinError } from "./diagnostics";
+import type { JoinRoom, MessageHandler, NetChannel, NetRoom, NetTrouble, RelayCount } from "./room";
 
 /**
  * The only file that knows about Trystero. Trystero finds the other browser through public Nostr relays
@@ -15,6 +16,11 @@ export interface TrysteroOptions {
    * works on most home networks.
    */
   readonly turn?: readonly RTCIceServer[];
+  /**
+   * STUN servers, which tell each browser its public address. Omit to use Trystero's built-in list. Pass
+   * them when the network check (`checkNetwork`) should test exactly the servers the game uses.
+   */
+  readonly stun?: readonly RTCIceServer[];
 }
 
 /**
@@ -54,17 +60,51 @@ function wrapChannel(name: string, action: Wire): NetChannel {
   };
 }
 
-function turnConfig(options: TrysteroOptions): { turnConfig?: RTCIceServer[] } {
+/** Every ICE server the game uses: what `checkNetwork` should test. Empty means Trystero's defaults. */
+export function iceServers(options: TrysteroOptions): RTCIceServer[] {
+  return [...(options.stun ?? []), ...(options.turn ?? [])];
+}
+
+function iceConfig(options: TrysteroOptions): {
+  turnConfig?: RTCIceServer[];
+  rtcConfig?: RTCConfiguration;
+} {
   const turn = options.turn ?? [];
+  if (options.stun !== undefined) {
+    // Trystero uses rtcConfig.iceServers instead of its defaults and turnConfig, so it needs both.
+    return { rtcConfig: { iceServers: iceServers(options) } };
+  }
   return turn.length === 0 ? {} : { turnConfig: [...turn] };
+}
+
+/** Relay sockets are shared by every room on the page; count the ones open now. */
+function openRelays(): RelayCount {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Trystero types it `any`; checked below.
+  const sockets: unknown = getRelaySockets();
+  if (typeof sockets !== "object" || sockets === null) {
+    return { open: 0, connecting: 0, total: 0 };
+  }
+  const all = Object.values(sockets).filter((socket) => socket instanceof WebSocket);
+  const inState = (state: number): number => all.filter((s) => s.readyState === state).length;
+  return {
+    open: inState(WebSocket.OPEN),
+    connecting: inState(WebSocket.CONNECTING),
+    total: all.length,
+  };
+}
+
+function ignoreTrouble(): void {
+  // Nobody is listening yet.
 }
 
 /** A `JoinRoom` backed by Trystero's default (Nostr) matchmaking. */
 export function trysteroJoiner(options: TrysteroOptions): JoinRoom {
   return (code) => {
-    const room = joinRoom({ appId: options.appId, ...turnConfig(options) }, code, {
+    let troubleHandler: (trouble: NetTrouble) => void = ignoreTrouble;
+    const room = joinRoom({ appId: options.appId, ...iceConfig(options) }, code, {
       onJoinError: (details) => {
         console.warn("net: could not join room", details.error);
+        troubleHandler(classifyJoinError(details.error));
       },
     });
     const channels = new Map<string, NetChannel>();
@@ -85,6 +125,10 @@ export function trysteroJoiner(options: TrysteroOptions): JoinRoom {
       onPeerLeave: (handler) => {
         room.onPeerLeave = handler;
       },
+      onTrouble: (handler) => {
+        troubleHandler = handler;
+      },
+      relays: openRelays,
       leave: () => {
         void room.leave();
       },

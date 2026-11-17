@@ -14,9 +14,10 @@ import { buildHouse } from "./render/houseView";
 import { KnockableViews } from "./render/knockableViews";
 import { Markers } from "./render/markers";
 import { createStage, type Stage } from "./render/stage";
-import { roomFromUrl, trysteroJoiner } from "./net";
+import { iceServers, roomFromUrl, trysteroJoiner } from "./net";
 import { Lobby } from "./netplay/lobby";
 import { Online, type GameHooks, type OnlineRound } from "./netplay/online";
+import { Troubleshooter, stunServers } from "./netplay/troubleshooter";
 import { LocalMatch, computerRival, otherCat, type Match } from "./play/localMatch";
 import { buildNavGrid, createGame, planWalk, walkInput, type NavGrid, type WalkGoal } from "./sim";
 import {
@@ -380,10 +381,18 @@ function wireOnline(
         lobby.hide();
         game.backToMenu();
       },
+      onCheckNetwork: () => {
+        help.runCheck();
+      },
+      report: () => help.report(),
     },
     net.roomCodeLength,
   );
-  const session = new Online(net, online, trysteroJoiner({ appId: net.appId }), lobby, game);
+  const transport = { appId: net.appId, stun: stunServers(net) };
+  // The network check tests every server the game uses, including TURN if one is added.
+  const help = new Troubleshooter(lobby, net, iceServers(transport));
+  const joiner = trysteroJoiner(transport);
+  const session = new Online(net, online, joiner, lobby, game, help);
   game.setFriendEntry(() => {
     lobby.open();
   });

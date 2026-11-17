@@ -67,5 +67,16 @@ room_code_length = 4
 # How often the host sends the whole game state, and the guest its input. Higher is smoother but busier.
 snapshots_per_second = 20
 inputs_per_second = 30
+# Public STUN servers: they tell each browser its public address. The same list Trystero uses by default;
+# set here so the "Check my connection" test uses exactly the servers the game does.
+stun_servers = [
+  "stun:stun.l.google.com:19302",
+  "stun:stun1.l.google.com:19302",
+  "stun:stun2.l.google.com:19302",
+  "stun:stun.cloudflare.com:3478",
+]
+# Troubleshooting: how long "Check my connection" listens, and when "still looking" advice appears.
+network_check_seconds = 5
+slow_join_seconds = 20
 
 [secrets]

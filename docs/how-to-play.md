@@ -39,6 +39,13 @@ Whoever opened the room runs the game, so keep that page open and in front; if i
 both. If the friend leaves, the computer takes over their cat. After a round, the person who opened the room
 can start another. It works on most home networks; see [Multiplayer](multiplayer.md) for when it does not.
 
+### If it won't connect
+
+Open **Trouble connecting?** under the room code. It shows whether the game can reach its matchmaking
+servers, and **Check my connection** tests your network in a few seconds. Each of you should run it. If the
+advice doesn't help, tap **Copy report** and send it to whoever looks after the game. The report has no IP
+addresses or room code in it.
+
 ## Scoring
 
 | What                    | Points         | Who   |
