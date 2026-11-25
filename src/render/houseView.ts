@@ -1,8 +1,16 @@
 import * as THREE from "three";
 import type { Rect } from "../sim/types";
 import { WALL_THICKNESS, wallRect } from "../house/toWorld";
-import type { FloorMaterial, FurnitureDef, HouseFloor, WallDef, WallKind } from "../house/types";
+import type {
+  FloorMaterial,
+  FurnitureDef,
+  HouseFloor,
+  SurfaceName,
+  WallDef,
+  WallKind,
+} from "../house/types";
 import { loadModelCopy } from "./models";
+import { SURFACES, repeatsFor, surfaceMaterial, surfaceTexture } from "./surfaces";
 
 const HALF = 0.5;
 const QUARTER_TURN = Math.PI * HALF;
@@ -13,25 +21,38 @@ const WALLS = {
   sillHeight: 0.9,
   headerStart: 2.05,
   railHeight: 0.08,
-  upperColor: 0xc9cfdb,
-  lowerColor: 0x858a99,
+  // Pale blue-white paint above, the slate blue of the island and pillar below.
+  upperColor: 0xdfe3ea,
+  lowerColor: 0x5d667a,
   railColor: 0xf7f5f0,
   doorColor: 0xfaf7f0,
   glassColor: 0xcfeaff,
   glassGlow: 0.9,
 } as const;
 
-const FLOORS: Record<FloorMaterial, number> = {
-  carpet: 0xd9cfbd,
-  tile: 0xb9b3a6,
-  wood: 0x7a4f35,
-  concrete: 0x77787c,
-  stairwell: 0x2f2b29,
-  sunbeam: 0xf6e7a6,
+interface FloorLook {
+  readonly surface: SurfaceName;
+  /** Multiplies the pattern: white leaves it as drawn. */
+  readonly color: number;
+  /** Light the floor gives off on its own (the sunbeam). */
+  readonly glow: number;
+}
+
+const PLAIN = 0xffffff;
+const NO_GLOW = 0x000000;
+
+const FLOORS: Record<FloorMaterial, FloorLook> = {
+  carpet: { surface: "carpet", color: PLAIN, glow: NO_GLOW },
+  tile: { surface: "tile", color: PLAIN, glow: NO_GLOW },
+  wood: { surface: "hardwood", color: PLAIN, glow: NO_GLOW },
+  concrete: { surface: "concrete", color: PLAIN, glow: NO_GLOW },
+  stairwell: { surface: "hardwood", color: 0x4a403c, glow: NO_GLOW },
+  sunbeam: { surface: "hardwood", color: 0xffe7b0, glow: 0x5a3a12 },
 };
 /** Floors draw before everything else, later areas on top of earlier ones. */
 const FLOOR_DRAW_ORDER = -1000;
 const OPENING_GAP = 0.02;
+const FLOOR_ROUGHNESS = 0.85;
 
 const DEFAULT_BOX_COLOR = 0xb0a090;
 const GLOW = { intensity: 6, distance: 4.5, emissive: 2 } as const;
@@ -43,6 +64,21 @@ interface Band {
 }
 
 /**
+ * Texture coordinates in metres over the pattern's size, measured from the house's corner, so planks and
+ * tiles keep their real size and line up across neighbouring floor areas.
+ */
+function worldUvs(geometry: THREE.PlaneGeometry, rect: Rect, tileMetres: number): void {
+  const width = rect.maxX - rect.minX;
+  const depth = rect.maxZ - rect.minZ;
+  const uv = geometry.getAttribute("uv");
+  for (let i = 0; i < uv.count; i += 1) {
+    const x = rect.minX + uv.getX(i) * width;
+    const z = rect.maxZ - uv.getY(i) * depth;
+    uv.setXY(i, x / tileMetres, -z / tileMetres);
+  }
+}
+
+/**
  * Every floor area lies flat at height 0. Overlapping areas are ordered by drawing them first, in
  * layer order, each one painting over the last. Stacking them a few millimetres apart instead lifted the top
  * layers above the rugs and the see-through nap rings, which then flickered in and out of the floor.
@@ -50,13 +86,18 @@ interface Band {
 function floorMesh(rect: Rect, material: FloorMaterial, layer: number): THREE.Mesh {
   const width = rect.maxX - rect.minX;
   const depth = rect.maxZ - rect.minZ;
+  const look = FLOORS[material];
+  const geometry = new THREE.PlaneGeometry(width, depth);
+  worldUvs(geometry, rect, SURFACES[look.surface].tileMetres ?? 1);
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, depth),
+    geometry,
     // Always passing (rather than switching the test off) still writes depth, so nothing under the
     // floor shows through it.
     new THREE.MeshStandardMaterial({
-      color: FLOORS[material],
-      roughness: 1,
+      map: surfaceTexture(look.surface),
+      color: look.color,
+      emissive: look.glow,
+      roughness: FLOOR_ROUGHNESS,
       depthFunc: THREE.AlwaysDepth,
     }),
   );
@@ -145,25 +186,40 @@ function isFabric(color: THREE.Color): boolean {
   return color.r > color.g * FABRIC_RED_OVER_GREEN && color.r > color.b * FABRIC_RED_OVER_GREEN;
 }
 
-function retint(material: THREE.Material, tint: number): THREE.Material {
-  if (!(material instanceof THREE.MeshStandardMaterial) || !isFabric(material.color)) {
+type Recolor = (material: THREE.MeshStandardMaterial) => number | undefined;
+
+function recolorOne(material: THREE.Material, pickColor: Recolor): THREE.Material {
+  if (!(material instanceof THREE.MeshStandardMaterial)) {
+    return material;
+  }
+  const color = pickColor(material);
+  if (color === undefined) {
     return material;
   }
   const copy = material.clone();
-  copy.color.setHex(tint);
+  copy.color.setHex(color);
   return copy;
 }
 
-function tintFabric(object: THREE.Object3D, tint: number): void {
+/** Swaps in a copy of each material the rule gives a new colour, leaving the shared originals alone. */
+function recolor(object: THREE.Object3D, pickColor: Recolor): void {
   object.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) {
       return;
     }
     const current = child.material as THREE.Material | THREE.Material[];
     child.material = Array.isArray(current)
-      ? current.map((material) => retint(material, tint))
-      : retint(current, tint);
+      ? current.map((material) => recolorOne(material, pickColor))
+      : recolorOne(current, pickColor);
   });
+}
+
+function tintFabric(object: THREE.Object3D, tint: number): void {
+  recolor(object, (material) => (isFabric(material.color) ? tint : undefined));
+}
+
+function paintParts(object: THREE.Object3D, paint: Readonly<Record<string, number>>): void {
+  recolor(object, (material) => paint[material.name]);
 }
 
 function enableShadows(object: THREE.Object3D): void {
@@ -173,23 +229,53 @@ function enableShadows(object: THREE.Object3D): void {
   });
 }
 
-function boxFurniture(item: FurnitureDef): THREE.Object3D {
+const BOX_FACES = 6;
+const FACE_TOP = 2;
+const FACE_FRONT = 4;
+
+/** The pattern on the faces its surface names, the edge colour on the rest. */
+function surfaceMaterials(
+  item: FurnitureDef,
+  name: SurfaceName,
+): THREE.Material | THREE.Material[] {
+  const def = SURFACES[name];
+  const { w, d, h } = item.size;
+  const front = def.faces === "front";
+  const pattern = surfaceMaterial(name, repeatsFor(name, w, front ? h : d));
+  if (def.faces === "all") {
+    return pattern;
+  }
+  const edge = new THREE.MeshStandardMaterial({ color: def.edge, roughness: 0.9 });
+  const patterned = front ? FACE_FRONT : FACE_TOP;
+  return Array.from({ length: BOX_FACES }, (_, face) => (face === patterned ? pattern : edge));
+}
+
+function plainMaterial(item: FurnitureDef): THREE.Material {
   const color = item.color ?? DEFAULT_BOX_COLOR;
   const glows = item.glow === true;
-  const material = new THREE.MeshStandardMaterial({
+  return new THREE.MeshStandardMaterial({
     color,
     roughness: 0.9,
     emissive: glows ? color : 0,
     emissiveIntensity: glows ? GLOW.emissive : 0,
   });
+}
+
+function boxFurniture(item: FurnitureDef): THREE.Object3D {
+  const material =
+    item.surface === undefined ? plainMaterial(item) : surfaceMaterials(item, item.surface);
   const { w, d, h } = item.size;
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(item.pos.x, (item.lift ?? 0) + h * HALF, item.pos.z);
-  if (!glows) {
+  if (item.glow !== true) {
     enableShadows(mesh);
     return mesh;
   }
-  const light = new THREE.PointLight(color, GLOW.intensity, GLOW.distance);
+  const light = new THREE.PointLight(
+    item.color ?? DEFAULT_BOX_COLOR,
+    GLOW.intensity,
+    GLOW.distance,
+  );
   mesh.add(light);
   return mesh;
 }
@@ -224,6 +310,9 @@ async function furnitureObject(item: FurnitureDef): Promise<THREE.Object3D> {
   const model = await loadModelCopy(`furniture/${item.model}.glb`);
   if (item.tint !== undefined) {
     tintFabric(model, item.tint);
+  }
+  if (item.paint !== undefined) {
+    paintParts(model, item.paint);
   }
   return fitModel(model, item);
 }
