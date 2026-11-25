@@ -75,7 +75,7 @@ later. The one under the dining table is where only Arwen can reach.
 
 ### Knocking things over
 
-A coffee cup on the counter, the TV remote on the ottoman and a toy mouse on the living-room floor. Brush past one and it
+A coffee cup on the counter, the TV remote on the covered table in front of the fireplace and a toy mouse on the living-room floor. Brush past one and it
 ends up on the floor. Someone puts it back after 25 seconds, so it can be knocked again.
 
 ## Abilities
@@ -103,13 +103,13 @@ While she is hidden within 3 metres of him she scores for teasing him.
 
 Each cat has five extra goals, shown at the top left. Each is worth 15 points, once.
 
-| Aragorn                       | Arwen                            |
-| ----------------------------- | -------------------------------- |
-| Swat Arwen                    | Hide near Aragorn for 5 seconds  |
-| Knock the cup off the counter | Sneak the treat under the table  |
-| Claim the couch               | Knock the remote off the ottoman |
-| Bat the toy mouse             | Nap in the sunbeam               |
-| Hold 4 spots at once          | Take the bed on the counter      |
+| Aragorn                       | Arwen                                  |
+| ----------------------------- | -------------------------------------- |
+| Swat Arwen                    | Hide near Aragorn for 5 seconds        |
+| Knock the cup off the counter | Sneak the treat under the table        |
+| Claim the couch               | Knock the remote off the covered table |
+| Bat the toy mouse             | Nap in the sunbeam                     |
+| Hold 4 spots at once          | Take the bed on the counter            |
 
 ## The house
 
@@ -117,8 +117,8 @@ The main floor of the real house, laid out from the floor plan and dressed from 
 11 by 12 metres:
 
 - **Den** (north-west): the dining table, the balcony sliding door with a sunbeam, and the blue cat tree.
-- **Living room** (centre): one long room with the fireplace, the TV above it, curtained windows and two
-  couches.
+- **Living room** (centre): one long room with the fireplace, the TV above it, curtained windows, a plaid-covered
+  table in front of the fireplace, and a sectional couch and wicker rocker along the far wall.
 - **Kitchen**: an island whose counter is backed by a half wall, which turns into a full-height pillar wall
   with a walkthrough to the living room.
 - **Laundry room** (south-west): washer, dryer and pantry.
@@ -126,5 +126,5 @@ The main floor of the real house, laid out from the floor plan and dressed from 
 - **Bedroom wing** (east): the primary bedroom, a hall, the walk-in closet, the primary bath, a second bath
   and the kid's bedroom.
 
-The garage is only bare concrete outside the walls. Cats can hop onto the couches, the ottoman, the floor
+The garage is only bare concrete outside the walls. Cats can hop onto the couch, the rocking chair, the covered table, the floor
 cushions, the island and its half wall, both perches of the cat tree, the washer and dryer, and both beds.

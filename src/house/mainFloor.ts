@@ -1,3 +1,4 @@
+import type { Vec2 } from "../sim/types";
 import type { FurnitureDef, HouseFloor, Size3, Turns, WallDef, WallKind } from "./types";
 
 /**
@@ -6,7 +7,7 @@ import type { FurnitureDef, HouseFloor, Size3, Turns, WallDef, WallKind } from "
  * wall is north so the camera faces it.
  *
  * Rough map:                 north (balcony slider, fireplace)
- *   den (dining table) |  living room      |  primary bedroom
+ *   den (dining table) |  living room      |  primary bedroom (juts out north)
  *   kitchen + island   |                   |  hall, closet, bath
  *   laundry | stairs   |  foyer            |  bath
  *   (garage, not built)   front door       |  second bedroom
@@ -19,13 +20,13 @@ const FACES_SOUTH: Turns = 0;
 const FACES_WEST: Turns = 1;
 const FACES_NORTH: Turns = 2;
 const FACES_EAST: Turns = 3;
+const HALF = 0.5;
 
 /** Colours picked off the photos of the house. */
 const COLORS = {
   mantel: 0xf4f1ea,
   firebox: 0x1c1a1a,
   fire: 0xff8a2a,
-  ottoman: 0xd8cfa8,
   oak: 0xb4743a,
   oakDark: 0x8e5526,
   espresso: 0x45291c,
@@ -65,17 +66,20 @@ function curb(x1: number, z1: number, x2: number, z2: number, kind: WallKind = "
 }
 
 const OUTSIDE_WALLS: readonly WallDef[] = [
-  // North: balcony slider off the den, a window either side of the fireplace, bedroom window.
+  // North: balcony slider off the den, a window either side of the fireplace, then the primary
+  // bedroom, which juts out 0.7 m past the living room, with its window.
   wall(0, 0, 0.6, 0),
   wall(0.6, 0, 2.5, 0, "slider"),
   wall(2.5, 0, 3.1, 0),
   wall(3.1, 0, 3.9, 0, "window"),
   wall(3.9, 0, 5.9, 0),
   wall(5.9, 0, 6.7, 0, "window"),
-  wall(6.7, 0, 8.4, 0),
-  wall(8.4, 0, 10.2, 0, "window"),
-  wall(10.2, 0, 11.4, 0),
-  wall(11.4, 0, 11.4, 12.1),
+  wall(6.7, 0, 7, 0),
+  wall(7, 0, 7, -0.7),
+  wall(7, -0.7, 8.4, -0.7),
+  wall(8.4, -0.7, 10.2, -0.7, "window"),
+  wall(10.2, -0.7, 11.4, -0.7),
+  wall(11.4, -0.7, 11.4, 12.1),
   // West: kitchen window over the sink.
   wall(0, 0, 0, 4.2),
   wall(0, 4.2, 0, 5.3, "window"),
@@ -98,16 +102,17 @@ const INSIDE_WALLS: readonly WallDef[] = [
   // Kitchen to laundry, with the laundry door left open.
   curb(0, 7, 1.1, 7),
   curb(2.2, 7, 3.1, 7),
-  // Living room to the bedroom wing; the gap is the hall.
-  curb(7, 0, 7, 3.5),
+  // Living room to the bedroom wing; the gap is the hall, 1.1 m rather than the plan's 0.95 so
+  // Aragorn fits through it the way the kitchen openings were widened for him.
+  curb(7, 0, 7, 4.4),
   curb(7, 5.5, 7, 6.3),
   // Primary bedroom's south wall: doors to the hall, the walk-in closet and its bath.
-  curb(7, 3.3, 7.15, 3.3),
-  curb(8.05, 3.3, 8.45, 3.3),
-  curb(9.35, 3.3, 10.1, 3.3),
-  curb(11, 3.3, 11.4, 3.3),
-  curb(8.2, 3.3, 8.2, 6.3),
-  curb(9.6, 3.3, 9.6, 6.3),
+  curb(7, 3.1, 7.15, 3.1),
+  curb(8.05, 3.1, 8.45, 3.1),
+  curb(9.35, 3.1, 10.1, 3.1),
+  curb(11, 3.1, 11.4, 3.1),
+  curb(8.2, 3.1, 8.2, 6.3),
+  curb(9.8, 3.1, 9.8, 6.3),
   curb(7, 6.3, 11.4, 6.3),
   // Second bath, off the foyer.
   curb(8.8, 6.3, 8.8, 7),
@@ -141,21 +146,21 @@ function dressing(
 
 /** What the photos add around the living room: throws, pillows, pictures, the rocker, a box. */
 const LIVING_DRESSING: readonly FurnitureDef[] = [
-  dressing("coffee_runner", 5, 2.5, { w: 1, d: 0.32, h: 0.01 }, 0.45, { surface: "runner" }),
+  dressing("coffee_runner", 5.35, 2.4, { w: 1, d: 0.32, h: 0.01 }, 0.45, { surface: "runner" }),
   dressing("throw_mustard", 6.32, 2.05, { w: 0.5, d: 0.8, h: 0.03 }, 0.42, {
     color: COLORS.mustardThrow,
   }),
   dressing("throw_peacock", 6.86, 2.3, { w: 0.18, d: 1.3, h: 0.4 }, 0.45, {
     surface: "peacockThrow",
   }),
-  dressing("quilt_back", 5.55, 4.26, { w: 1.2, d: 0.16, h: 0.4 }, 0.45, { surface: "quilt" }),
+  dressing("quilt_back", 6.22, 4.26, { w: 1.2, d: 0.16, h: 0.4 }, 0.45, { surface: "quilt" }),
   dressing("pillow_butterfly", 6.78, 1.75, { w: 0.14, d: 0.42, h: 0.32 }, 0.42, {
     color: COLORS.butterflyPillow,
   }),
   dressing("pillow_floral_a", 6.75, 3.1, { w: 0.14, d: 0.36, h: 0.3 }, 0.42, {
     color: COLORS.floralPillow,
   }),
-  dressing("pillow_floral_b", 4.5, 4.18, { w: 0.36, d: 0.14, h: 0.3 }, 0.42, {
+  dressing("pillow_floral_b", 5.75, 4.18, { w: 0.36, d: 0.14, h: 0.3 }, 0.42, {
     color: COLORS.floralPillow,
   }),
   dressing("painting_tree", 7.65, 0.1, { w: 0.95, d: 0.03, h: 0.63 }, 1.25, {
@@ -164,23 +169,25 @@ const LIVING_DRESSING: readonly FurnitureDef[] = [
   dressing("painting_cat", 2.75, 0.1, { w: 0.32, d: 0.03, h: 0.4 }, 1.25, {
     surface: "catPainting",
   }),
-  dressing("console_plaid", 3.55, 1.5, { w: 0.4, d: 1.1, h: 0.03 }, 0.62, { surface: "plaid" }),
-  dressing("rocker_throw", 3.85, 4.12, { w: 0.5, d: 0.1, h: 0.55 }, 0.45, {
+  // The table in front of the fireplace, covered in a plaid cloth that hangs down its sides.
+  dressing("console_plaid", 3.55, 1.5, { w: 0.42, d: 1.12, h: 0.32 }, 0.33, { surface: "plaid" }),
+  dressing("rocker_throw", 5, 4.52, { w: 0.5, d: 0.1, h: 0.55 }, 0.45, {
     surface: "orangeThrow",
   }),
-  dressing("rocker_runner_left", 3.6, 3.85, { w: 0.05, d: 0.75, h: 0.04 }, 0, {
+  dressing("rocker_runner_left", 4.75, 4.25, { w: 0.05, d: 0.75, h: 0.04 }, 0, {
     color: COLORS.rockerGreen,
   }),
-  dressing("rocker_runner_right", 4.1, 3.85, { w: 0.05, d: 0.75, h: 0.04 }, 0, {
+  dressing("rocker_runner_right", 5.25, 4.25, { w: 0.05, d: 0.75, h: 0.04 }, 0, {
     color: COLORS.rockerGreen,
   }),
   {
     id: "rocker",
     model: "chairRounded",
-    pos: { x: 3.85, z: 3.85 },
+    pos: { x: 5, z: 4.25 },
     size: { w: 0.55, d: 0.6, h: 0.95 },
     turns: FACES_NORTH,
     lift: 0.04,
+    platformHeight: 0.45,
     paint: { wood: COLORS.wicker },
   },
   {
@@ -189,6 +196,7 @@ const LIVING_DRESSING: readonly FurnitureDef[] = [
     pos: { x: 3.55, z: 1.5 },
     size: { w: 0.38, d: 1.05, h: 0.62 },
     turns: FACES_EAST,
+    platformHeight: 0.65,
     paint: { wood: COLORS.espresso },
   },
   {
@@ -255,6 +263,8 @@ const LIVING: readonly FurnitureDef[] = [
     turns: FACES_SOUTH,
     blocks: "both",
   },
+  // One sectional along the bedroom-wing wall with a short return at its south end; the rocker
+  // (LIVING_DRESSING) sits past that, leaving the floor between them and the kitchen bar open.
   {
     id: "sofa_east",
     model: "loungeSofaLong",
@@ -265,10 +275,10 @@ const LIVING: readonly FurnitureDef[] = [
     platformHeight: 0.42,
   },
   {
-    id: "sofa_south",
+    id: "sofa_return",
     model: "loungeSofa",
-    pos: { x: 5.2, z: 3.9 },
-    size: { w: 2, d: 0.9, h: 0.85 },
+    pos: { x: 6.22, z: 3.95 },
+    size: { w: 1.5, d: 0.9, h: 0.85 },
     turns: FACES_NORTH,
     tint: COLORS.sofa,
     platformHeight: 0.42,
@@ -276,8 +286,8 @@ const LIVING: readonly FurnitureDef[] = [
   {
     id: "rug_living",
     model: null,
-    pos: { x: 5, z: 2.5 },
-    size: { w: 2.6, d: 2, h: 0.02 },
+    pos: { x: 5.3, z: 2.45 },
+    size: { w: 2.4, d: 2, h: 0.02 },
     turns: FACES_SOUTH,
     surface: "vintageRug",
   },
@@ -285,7 +295,7 @@ const LIVING: readonly FurnitureDef[] = [
     id: "coffee_table",
     model: "tableCoffee",
     paint: { wood: COLORS.espresso },
-    pos: { x: 5, z: 2.5 },
+    pos: { x: 5.35, z: 2.4 },
     size: { w: 1.2, d: 0.7, h: 0.45 },
     turns: FACES_SOUTH,
     blocks: "brother",
@@ -295,7 +305,7 @@ const LIVING: readonly FurnitureDef[] = [
     id: "side_table",
     model: "sideTable",
     paint: { wood: COLORS.espresso },
-    pos: { x: 6.65, z: 3.85 },
+    pos: { x: 6.6, z: 1 },
     size: { w: 0.45, d: 0.45, h: 0.5 },
     turns: FACES_WEST,
     blocks: "both",
@@ -304,7 +314,7 @@ const LIVING: readonly FurnitureDef[] = [
     id: "table_lamp",
     model: "lampRoundTable",
     paint: { metal: COLORS.blackMetal, lamp: COLORS.lampShade },
-    pos: { x: 6.65, z: 3.85 },
+    pos: { x: 6.6, z: 1 },
     size: { w: 0.3, d: 0.3, h: 0.55 },
     turns: FACES_SOUTH,
     lift: 0.5,
@@ -317,15 +327,6 @@ const LIVING: readonly FurnitureDef[] = [
     size: { w: 0.35, d: 0.35, h: 1.5 },
     turns: FACES_SOUTH,
     blocks: "both",
-  },
-  {
-    id: "ottoman",
-    model: null,
-    pos: { x: 3.9, z: 2.6 },
-    size: { w: 0.5, d: 0.5, h: 0.38 },
-    turns: FACES_SOUTH,
-    platformHeight: 0.38,
-    color: COLORS.ottoman,
   },
   {
     id: "floor_cushions",
@@ -553,35 +554,138 @@ const LAUNDRY: readonly FurnitureDef[] = [
   },
 ];
 
-/** The half wall around the stairs down to the basement, which is not built yet. */
-function railing(id: string, x: number, z: number, w: number, d: number): FurnitureDef {
+/**
+ * The stairs down to the basement, which is not built yet, so they are scenery: an L that starts at
+ * the top step beside the kitchen doorway, runs south along the kitchen wall to a landing in the
+ * corner, then turns east toward the coat closet. Each step is drawn a shade darker so the well
+ * reads as going down. Cats can look in from the top but not walk down.
+ */
+const STAIRS = {
+  west: 3.1,
+  top: 6.5,
+  /** Inside face of the half wall along the upper flight; the landing is as wide. */
+  flightEast: 4.1,
+  landingNorth: 8.2,
+  south: 9.4,
+  /** Coat closet's west wall, where the lower flight ends. */
+  east: 5.1,
+  upperSteps: 7,
+  lowerSteps: 4,
+  /** Steps from the main floor to the basement floor; the shading reaches dark at the bottom. */
+  totalSteps: 13,
+  treadHeight: 0.02,
+} as const;
+
+const HALF_WALL = { height: 0.95, thick: 0.12, capHeight: 0.04, capOverhang: 0.04 } as const;
+const TOP_SHADE = 0.75;
+/** The carpet colour the renderer uses, which the stairs are covered in too. */
+const FLOOR_CARPET = 0xd9cfbd;
+const BYTE = 0xff;
+const RED_SHIFT = 16;
+const GREEN_SHIFT = 8;
+
+/** Carpet colour darkened for the `step`th step down. */
+function stepColor(step: number): number {
+  const light = TOP_SHADE * (1 - step / STAIRS.totalSteps);
+  const scale = (shift: number): number => Math.round(((FLOOR_CARPET >> shift) & BYTE) * light);
+  return (scale(RED_SHIFT) << RED_SHIFT) | (scale(GREEN_SHIFT) << GREEN_SHIFT) | scale(0);
+}
+
+function tread(id: string, from: Vec2, to: Vec2, step: number): FurnitureDef {
   return {
     id,
     model: null,
-    pos: { x, z },
-    size: { w, d, h: 0.95 },
+    pos: { x: (from.x + to.x) * HALF, z: (from.z + to.z) * HALF },
+    size: { w: to.x - from.x, d: to.z - from.z, h: STAIRS.treadHeight },
     turns: FACES_SOUTH,
     blocks: "both",
-    color: COLORS.halfWall,
+    color: stepColor(step),
   };
 }
 
+function upperFlight(): FurnitureDef[] {
+  const run = (STAIRS.landingNorth - STAIRS.top) / STAIRS.upperSteps;
+  return Array.from({ length: STAIRS.upperSteps }, (_, i) =>
+    tread(
+      `stair_upper_${String(i + 1)}`,
+      { x: STAIRS.west, z: STAIRS.top + i * run },
+      { x: STAIRS.flightEast, z: STAIRS.top + (i + 1) * run },
+      i + 1,
+    ),
+  );
+}
+
+function lowerFlight(): FurnitureDef[] {
+  const run = (STAIRS.east - STAIRS.flightEast) / STAIRS.lowerSteps;
+  const firstStep = STAIRS.upperSteps + 2;
+  return Array.from({ length: STAIRS.lowerSteps }, (_, i) =>
+    tread(
+      `stair_lower_${String(i + 1)}`,
+      { x: STAIRS.flightEast + i * run, z: STAIRS.landingNorth },
+      { x: STAIRS.flightEast + (i + 1) * run, z: STAIRS.south },
+      firstStep + i,
+    ),
+  );
+}
+
+/** A half wall with the white cap the photos show, as a wall piece and its cap. */
+function halfWall(id: string, x: number, z: number, w: number, d: number): FurnitureDef[] {
+  const over = HALF_WALL.capOverhang * 2;
+  return [
+    {
+      id,
+      model: null,
+      pos: { x, z },
+      size: { w, d, h: HALF_WALL.height },
+      turns: FACES_SOUTH,
+      blocks: "both",
+      color: COLORS.halfWall,
+    },
+    {
+      id: `${id}_cap`,
+      model: null,
+      pos: { x, z },
+      size: { w: w + over, d: d + over, h: HALF_WALL.capHeight },
+      turns: FACES_SOUTH,
+      lift: HALF_WALL.height,
+      color: COLORS.trim,
+    },
+  ];
+}
+
+const STAIRWELL: readonly FurnitureDef[] = [
+  ...upperFlight(),
+  tread(
+    "stair_landing",
+    { x: STAIRS.west, z: STAIRS.landingNorth },
+    { x: STAIRS.flightEast, z: STAIRS.south },
+    STAIRS.upperSteps + 1,
+  ),
+  ...lowerFlight(),
+  // Along the east side of the upper flight, then turning east along the lower flight.
+  ...halfWall(
+    "stair_wall_east",
+    STAIRS.flightEast + HALF_WALL.thick * HALF,
+    (STAIRS.top + STAIRS.landingNorth) * HALF,
+    HALF_WALL.thick,
+    STAIRS.landingNorth - STAIRS.top,
+  ),
+  ...halfWall(
+    "stair_wall_north",
+    (STAIRS.flightEast + STAIRS.east) * HALF,
+    STAIRS.landingNorth - HALF_WALL.thick * HALF,
+    STAIRS.east - STAIRS.flightEast,
+    HALF_WALL.thick,
+  ),
+];
+
 const FOYER: readonly FurnitureDef[] = [
-  railing("stair_rail_north", 4.1, 6.45, 2, 0.14),
-  railing("stair_rail_east", 5.1, 7.3, 0.14, 1.84),
-  {
-    id: "stairs_down",
-    model: "stairs",
-    paint: { wood: COLORS.espresso, woodDark: COLORS.espresso },
-    pos: { x: 4.1, z: 8 },
-    size: { w: 1.2, d: 2.4, h: 0.3 },
-    turns: FACES_NORTH,
-  },
+  ...STAIRWELL,
   {
     id: "coat_closet",
     model: null,
-    pos: { x: 5.5, z: 8.75 },
-    size: { w: 0.9, d: 1.2, h: 1.3 },
+    pos: { x: 5.5, z: 8.8 },
+    size: { w: 0.8, d: 1.2, h: 1.3 },
     turns: FACES_SOUTH,
     blocks: "both",
     color: COLORS.trim,
@@ -623,16 +727,16 @@ const BEDROOM_WING: readonly FurnitureDef[] = [
   {
     id: "big_bed",
     model: "bedDouble",
-    pos: { x: 9.4, z: 1.15 },
+    pos: { x: 9.4, z: 0.45 },
     size: { w: 1.7, d: 2.1, h: 0.6 },
     turns: FACES_SOUTH,
     tint: COLORS.bigBed,
     paint: { wood: COLORS.blackMetal },
     platformHeight: 0.5,
   },
-  bathPiece("nightstand_west", "cabinetBed", 8.2, 0.4, { w: 0.45, d: 0.45, h: 0.5 }, FACES_SOUTH),
-  bathPiece("nightstand_east", "cabinetBed", 10.6, 0.4, { w: 0.45, d: 0.45, h: 0.5 }, FACES_SOUTH),
-  bathPiece("dresser", "bookcaseClosedWide", 11.1, 2.5, { w: 0.45, d: 1.2, h: 0.9 }, FACES_WEST),
+  bathPiece("nightstand_west", "cabinetBed", 8.2, -0.3, { w: 0.45, d: 0.45, h: 0.5 }, FACES_SOUTH),
+  bathPiece("nightstand_east", "cabinetBed", 10.6, -0.3, { w: 0.45, d: 0.45, h: 0.5 }, FACES_SOUTH),
+  bathPiece("dresser", "bookcaseClosedWide", 11.1, 2.2, { w: 0.45, d: 1.2, h: 0.9 }, FACES_WEST),
   // Walk-in closet.
   {
     id: "closet_shelf",
@@ -646,7 +750,7 @@ const BEDROOM_WING: readonly FurnitureDef[] = [
   bathPiece("closet_box", "cardboardBoxClosed", 9.3, 4, { w: 0.45, d: 0.45, h: 0.4 }, FACES_SOUTH),
   // Primary bath.
   bathPiece("tub_primary", "bathtub", 10.5, 5.9, { w: 1.6, d: 0.7, h: 0.55 }, FACES_NORTH),
-  bathPiece("toilet_primary", "toilet", 9.95, 4.8, { w: 0.45, d: 0.6, h: 0.75 }, FACES_EAST),
+  bathPiece("toilet_primary", "toilet", 10.15, 4.8, { w: 0.45, d: 0.6, h: 0.75 }, FACES_EAST),
   bathPiece(
     "sink_primary",
     "bathroomCabinet",
@@ -700,18 +804,19 @@ const BEDROOM_WING: readonly FurnitureDef[] = [
 export const MAIN_FLOOR: HouseFloor = {
   id: "main",
   name: "Main floor",
-  bounds: { minX: 0, minZ: 0, maxX: 11.4, maxZ: 12.1 },
+  bounds: { minX: 0, minZ: -0.7, maxX: 11.4, maxZ: 12.1 },
   floors: [
     { rect: { minX: 0, minZ: 0, maxX: 7, maxZ: 9.4 }, material: "wood" },
     { rect: { minX: 0, minZ: 9.4, maxX: 7.95, maxZ: 12.1 }, material: "concrete" },
     { rect: { minX: 0, minZ: 3.4, maxX: 3.1, maxZ: 9.4 }, material: "tile" },
-    { rect: { minX: 3.1, minZ: 6.4, maxX: 5.1, maxZ: 9.4 }, material: "stairwell" },
-    { rect: { minX: 7, minZ: 3.3, maxX: 8.2, maxZ: 6.3 }, material: "wood" },
+    { rect: { minX: 3.1, minZ: 6.5, maxX: 4.1, maxZ: 9.4 }, material: "stairwell" },
+    { rect: { minX: 4.1, minZ: 8.2, maxX: 5.1, maxZ: 9.4 }, material: "stairwell" },
+    { rect: { minX: 7, minZ: 3.1, maxX: 8.2, maxZ: 6.3 }, material: "wood" },
     { rect: { minX: 7, minZ: 6.3, maxX: 8.8, maxZ: 9.4 }, material: "wood" },
     { rect: { minX: 5.9, minZ: 8.4, maxX: 7.95, maxZ: 9.4 }, material: "tile" },
-    { rect: { minX: 7, minZ: 0, maxX: 11.4, maxZ: 3.3 }, material: "carpet" },
-    { rect: { minX: 8.2, minZ: 3.3, maxX: 9.6, maxZ: 6.3 }, material: "carpet" },
-    { rect: { minX: 9.6, minZ: 3.3, maxX: 11.4, maxZ: 6.3 }, material: "tile" },
+    { rect: { minX: 7, minZ: -0.7, maxX: 11.4, maxZ: 3.1 }, material: "carpet" },
+    { rect: { minX: 8.2, minZ: 3.1, maxX: 9.8, maxZ: 6.3 }, material: "carpet" },
+    { rect: { minX: 9.8, minZ: 3.1, maxX: 11.4, maxZ: 6.3 }, material: "tile" },
     { rect: { minX: 8.8, minZ: 6.3, maxX: 11.4, maxZ: 8.3 }, material: "tile" },
     { rect: { minX: 7.95, minZ: 8.3, maxX: 11.4, maxZ: 12.1 }, material: "carpet" },
     { rect: { minX: 0.7, minZ: 0.1, maxX: 2.4, maxZ: 1 }, material: "sunbeam" },
@@ -726,7 +831,7 @@ export const MAIN_FLOOR: HouseFloor = {
     { id: "food_bowl", name: "Food bowl", pos: { x: 1.6, z: 6.3 }, height: 0 },
     { id: "dryer", name: "Warm dryer", pos: { x: 0.45, z: 8.35 }, height: 0.95 },
     { id: "foyer_rug", name: "Shag rug", pos: { x: 7, z: 8.1 }, height: 0 },
-    { id: "big_bed", name: "Big bed", pos: { x: 9.4, z: 1.4 }, height: 0.5 },
+    { id: "big_bed", name: "Big bed", pos: { x: 9.4, z: 0.7 }, height: 0.5 },
     { id: "kid_bed", name: "Kid's bed", pos: { x: 10.8, z: 10.8 }, height: 0.45 },
   ],
   treatSpawns: [
@@ -739,7 +844,7 @@ export const MAIN_FLOOR: HouseFloor = {
   ],
   knockables: [
     { id: "cup", name: "coffee cup", pos: { x: 1.75, z: 3.87 }, height: 0.95, look: "cup" },
-    { id: "remote", name: "TV remote", pos: { x: 3.9, z: 2.6 }, height: 0.38, look: "remote" },
+    { id: "remote", name: "TV remote", pos: { x: 3.55, z: 1.5 }, height: 0.65, look: "remote" },
     { id: "toy_mouse", name: "toy mouse", pos: { x: 5.6, z: 5.4 }, height: 0, look: "toy" },
   ],
   mischief: [
@@ -782,7 +887,7 @@ export const MAIN_FLOOR: HouseFloor = {
     },
     {
       id: "knock_remote",
-      label: "Knock the remote off the ottoman",
+      label: "Knock the remote off the covered table",
       cat: "sister",
       goal: { kind: "knock", knockableId: "remote" },
     },
