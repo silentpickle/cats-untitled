@@ -38,9 +38,30 @@ export interface FurnitureDef {
   readonly color?: number;
   /** Replaces the kit's pink upholstery and rug colour on this piece. */
   readonly tint?: number;
+  /** Recolours the kit model's parts by material name (wood, woodDark, metal, lamp, carpet...). */
+  readonly paint?: Readonly<Record<string, number>>;
+  /** A drawn pattern on a plain box (a rug, a throw, a painting) in place of its flat colour. */
+  readonly surface?: SurfaceName;
   /** Lit from within (the fire). */
   readonly glow?: boolean;
 }
+
+/** Patterns drawn from the house photos (render/surfaces.ts). */
+export type SurfaceName =
+  | "hardwood"
+  | "tile"
+  | "carpet"
+  | "concrete"
+  | "granite"
+  | "vintageRug"
+  | "plaid"
+  | "floralCurtain"
+  | "runner"
+  | "quilt"
+  | "peacockThrow"
+  | "orangeThrow"
+  | "treePainting"
+  | "catPainting";
 
 export type WallKind = "wall" | "window" | "slider" | "door";
 

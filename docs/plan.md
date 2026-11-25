@@ -133,6 +133,22 @@ It becomes worth fixing at M4 if the stock cat needs reshaping (long fur for the
 | What the player plays on (keyboard, tablet, phone)   | M7 controls        | Keyboard first, touch added at M7      |
 | A layout for the basement                            | M5                 | Not built; the stairs lead nowhere yet |
 
+## Backlog: colour tweaks (2026-11-25)
+
+Textures and colours were matched by eye to three photos of the living room and kitchen, kept out of git in
+`cats_untitled_house/2026-11-25_textures/`. Drawn patterns live in `src/render/surfaces.ts` and the files beside
+it; furniture colours are the `COLORS` table in `src/house/mainFloor.ts`. To revisit:
+
+- The cherry floor may read too red and too contrasty; tone the plank palette in `surfaceFloors.ts`.
+- The two paintings hang on the north wall, which the camera looks down on, so they barely show. Move them
+  somewhere visible (the cat painting leans low against a wall in the photos).
+- The kitchen tile is plain beige squares; the photo's tile is more mottled.
+- The sectional, quilt and peacock throw are all dark and blend together from above.
+- The rocker is the kit's rounded chair recoloured wicker; it reads chunky.
+- Pillows are plain boxes; the butterfly and floral pillows could get drawn patterns.
+- Rooms not in these photos (bedrooms, baths, laundry, foyer) keep their earlier guessed colours. The hall's
+  dark navy walls are not painted yet.
+
 ## Status (2026-11-17)
 
 Built for the main floor, now laid out from the real floor plan with the bedroom wing: both cats (Aragorn
