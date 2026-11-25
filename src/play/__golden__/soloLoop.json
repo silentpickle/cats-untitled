@@ -300,8 +300,8 @@
     "brother": {
      "id": "brother",
      "pos": {
-      "x": 6.32288538560699,
-      "z": 4.798240916476341
+      "x": 6.634311166856989,
+      "z": 4.696320343559675
      },
      "facing": 3.141592653589793,
      "moving": true,
@@ -317,10 +317,10 @@
     "sister": {
      "id": "sister",
      "pos": {
-      "x": 0.6179922621286295,
-      "z": 8.1209221629318
+      "x": 0.6310034630177215,
+      "z": 8.154607684024548
      },
-     "facing": -0.7631000255259507,
+     "facing": -0.7580703020605055,
      "moving": false,
      "napping": true,
      "hidden": false,
@@ -329,7 +329,7 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 1.9833333333333059,
-     "score": 7.966666666666656
+     "score": 7.9499999999999895
     }
    },
    "points": [
@@ -367,7 +367,7 @@
      "id": "dryer",
      "owner": null,
      "capturer": "sister",
-     "progress": 0.6933333333333328
+     "progress": 0.6824999999999996
     },
     {
      "id": "foyer_rug",
@@ -392,7 +392,7 @@
     {
      "id": "treat_kitchen",
      "available": false,
-     "respawnIn": 13.71666666666678
+     "respawnIn": 13.683333333333445
     },
     {
      "id": "treat_table",
@@ -754,7 +754,22 @@
    {
     "kind": "knocked",
     "knockableId": "toy_mouse",
-    "by": "sister"
+    "by": "brother"
+   },
+   {
+    "kind": "mischief",
+    "mischiefId": "bat_mouse",
+    "by": "brother"
+   },
+   {
+    "kind": "swatted",
+    "by": "brother",
+    "target": "sister"
+   },
+   {
+    "kind": "mischief",
+    "mischiefId": "swat_arwen",
+    "by": "brother"
    },
    {
     "kind": "captured",
@@ -779,25 +794,25 @@
     "brother": {
      "id": "brother",
      "pos": {
-      "x": 4.998353952301415,
-      "z": 1.280344146713426
+      "x": 5.064478663080243,
+      "z": 1.252264538008946
      },
-     "facing": -2.4704787270375204,
+     "facing": -2.6167746374273464,
      "moving": false,
      "napping": true,
      "hidden": false,
      "stunnedFor": 0,
      "fleeFor": 0,
-     "swatCooldown": 0,
+     "swatCooldown": 0.9333333333333438,
      "stealthFor": 0,
      "stealthCooldown": 0,
-     "score": 22.5166666666666
+     "score": 54.69999999999985
     },
     "sister": {
      "id": "sister",
      "pos": {
-      "x": 6.274953078410523,
-      "z": 4.94828910908947
+      "x": 7.9249862166110665,
+      "z": 5.174966919528716
      },
      "facing": 3.141592653589793,
      "moving": true,
@@ -808,7 +823,7 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 1.9833333333333059,
-     "score": 2
+     "score": 0
     }
    },
    "points": [
@@ -822,7 +837,7 @@
      "id": "fireplace",
      "owner": null,
      "capturer": "brother",
-     "progress": 0.48000000000000087
+     "progress": 0.5099999999999992
     },
     {
      "id": "couch",
@@ -912,16 +927,16 @@
     },
     {
      "id": "toy_mouse",
-     "knockedBy": "sister",
-     "resetIn": 18.433333333333707
+     "knockedBy": "brother",
+     "resetIn": 17.983333333333732
     }
    ],
    "mischief": [
     {
      "id": "swat_arwen",
      "cat": "brother",
-     "done": false,
-     "progress": 0
+     "done": true,
+     "progress": 1
     },
     {
      "id": "knock_cup",
@@ -938,8 +953,8 @@
     {
      "id": "bat_mouse",
      "cat": "brother",
-     "done": false,
-     "progress": 0
+     "done": true,
+     "progress": 1
     },
     {
      "id": "own_four",
