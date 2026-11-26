@@ -103,6 +103,7 @@ function simSettings(root: Table): Settings {
   const stealth = table(root, "stealth");
   const treats = table(root, "treats");
   const mischief = table(root, "mischief");
+  const bird = table(root, "bird");
   return {
     round: { durationSeconds: num(table(root, "round"), "duration_seconds") },
     capture: {
@@ -133,6 +134,12 @@ function simSettings(root: Table): Settings {
       knockRadius: num(mischief, "knock_radius"),
       knockPoints: num(mischief, "knock_points"),
       resetSeconds: num(mischief, "reset_seconds"),
+    },
+    bird: {
+      seconds: num(bird, "seconds"),
+      speed: num(bird, "speed"),
+      scareRadius: num(bird, "scare_radius"),
+      cooldownSeconds: num(bird, "cooldown_seconds"),
     },
   };
 }

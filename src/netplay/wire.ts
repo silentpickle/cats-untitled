@@ -1,6 +1,16 @@
 // Checks what arrives off the network before the game touches it. Every decoder rebuilds its value
 // from the known fields only, so extra keys, wrong types and non-finite numbers never get through.
-import type { CatId, CatInput, CatState, GameEvent, GameState, Phase, Vec2 } from "../sim/types";
+import type {
+  BirdPhase,
+  BirdState,
+  CatId,
+  CatInput,
+  CatState,
+  GameEvent,
+  GameState,
+  Phase,
+  Vec2,
+} from "../sim/types";
 import { CAT_IDS } from "../sim/types";
 
 /** Marks a value that failed to decode. Not `null`, because some fields are legitimately null. */
@@ -16,6 +26,7 @@ const MAX_LIST_LENGTH = 256;
 const MAX_MOVE_LENGTH = 1;
 const PHASES: readonly Phase[] = ["playing", "finished"];
 const WINNERS: readonly (CatId | "tie")[] = [...CAT_IDS, "tie"];
+const BIRD_PHASES: readonly BirdPhase[] = ["away", "in", "leaving"];
 
 // --- Primitive decoders ---------------------------------------------------------------------
 
@@ -103,6 +114,7 @@ const catState: Decoder<CatState> = object({
   swatCooldown: finite,
   stealthFor: finite,
   stealthCooldown: finite,
+  chasing: bool,
   score: finite,
 });
 
@@ -124,6 +136,15 @@ const napPoint = object({
 const treat = object({ id: str, available: bool, respawnIn: finite });
 const knockable = object({ id: str, knockedBy: nullable(catId), resetIn: finite });
 const mischief = object({ id: str, cat: catId, done: bool, progress: finite });
+const bird: Decoder<BirdState> = object({
+  phase: oneOf(BIRD_PHASES),
+  pos: vec2,
+  target: finite,
+  perched: bool,
+  inFor: finite,
+  cooldown: finite,
+  brotherOutside: bool,
+});
 
 // --- Events: one decoder per kind -----------------------------------------------------------
 
@@ -137,6 +158,8 @@ const EVENT_DECODERS: { readonly [K in EventKind]: Decoder<Extract<GameEvent, { 
   treat: object({ kind: literal("treat"), treatId: str, by: catId }),
   knocked: object({ kind: literal("knocked"), knockableId: str, by: catId }),
   mischief: object({ kind: literal("mischief"), mischiefId: str, by: catId }),
+  bird_in: object({ kind: literal("bird_in") }),
+  bird_out: object({ kind: literal("bird_out") }),
   round_over: object({ kind: literal("round_over"), winner: oneOf(WINNERS) }),
 };
 
@@ -161,6 +184,7 @@ const gameState: Decoder<GameState> = object({
   treats: arrayOf(treat),
   knockables: arrayOf(knockable),
   mischief: arrayOf(mischief),
+  bird,
   events: arrayOf(gameEvent),
 });
 

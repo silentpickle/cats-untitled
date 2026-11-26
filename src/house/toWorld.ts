@@ -1,5 +1,5 @@
-import type { HideSpotDef, Obstacle, Rect, WorldDef } from "../sim/types";
-import type { FurnitureDef, HouseFloor, WallDef } from "./types";
+import type { BirdPathDef, HideSpotDef, Obstacle, Rect, WorldDef } from "../sim/types";
+import type { BirdPathPlacement, FurnitureDef, HouseFloor, WallDef } from "./types";
 
 export const WALL_THICKNESS = 0.15;
 const HALF = 0.5;
@@ -42,10 +42,28 @@ function hideSpots(furniture: readonly FurnitureDef[]): HideSpotDef[] {
     .map((item) => ({ id: item.id, rect: furnitureRect(item) }));
 }
 
+/** The part of a wall that stops cats: all of it, except the open half of a cat door. */
+function solidPart(wall: WallDef): WallDef {
+  if (wall.kind !== "catDoor") return wall;
+  const middle = {
+    x: (wall.from.x + wall.to.x) * HALF,
+    z: (wall.from.z + wall.to.z) * HALF,
+  };
+  return { ...wall, to: middle };
+}
+
+function wallObstacles(walls: readonly WallDef[]): Obstacle[] {
+  return walls.map((wall) => ({ rect: wallRect(solidPart(wall)), blocks: "both" }));
+}
+
+function birdPath(placement: BirdPathPlacement): BirdPathDef {
+  return { ...placement, perches: placement.perches.map((perch) => perch.pos) };
+}
+
 /** Turns the drawable house description into what the game rules need. */
 export function toWorld(floor: HouseFloor): WorldDef {
-  const walls: Obstacle[] = floor.walls.map((wall) => ({ rect: wallRect(wall), blocks: "both" }));
-  return {
+  const walls = wallObstacles(floor.walls);
+  const world: WorldDef = {
     bounds: floor.bounds,
     obstacles: [...walls, ...furnitureObstacles(floor.furniture)],
     napPoints: floor.napPoints.map(({ id, name, pos }) => ({ id, name, pos })),
@@ -55,6 +73,7 @@ export function toWorld(floor: HouseFloor): WorldDef {
     mischief: floor.mischief,
     spawn: floor.spawn,
   };
+  return floor.bird === undefined ? world : { ...world, bird: birdPath(floor.bird) };
 }
 
 /** Height a cat stands at for a given spot: the tallest platform under it, else the floor. */

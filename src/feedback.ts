@@ -50,6 +50,12 @@ const RULES: { readonly [K in GameEvent["kind"]]: FeedbackFor<K> } = {
         : null,
     sounds: event.by === player ? ["mischief"] : [],
   }),
+  bird_in: (_event, player) => ({
+    toast:
+      player === "brother" ? "A bird! You can't help yourself." : "A bird followed Aragorn in!",
+    sounds: ["chirp"],
+  }),
+  bird_out: () => ({ toast: "The bird got away", sounds: ["chirp"] }),
   round_over: (event, player) => ({
     toast: null,
     sounds: [event.winner === player || event.winner === "tie" ? "round_win" : "round_lose"],

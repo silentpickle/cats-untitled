@@ -18,12 +18,20 @@ function cat(patch: Partial<CatState>): CatState {
     swatCooldown: 0,
     stealthFor: 0,
     stealthCooldown: 0,
+    chasing: false,
     score: 0,
     ...patch,
   };
 }
 
 describe("ability pill", () => {
+  it("brother_chasing_bird_says_so", () => {
+    expect(abilityStatus(cat({ id: "brother", chasing: true }))).toEqual({
+      text: "Chasing the bird!",
+      ready: false,
+    });
+  });
+
   it("brother_swat_ready_and_counting_down", () => {
     expect(abilityStatus(cat({ id: "brother" }))).toEqual({ text: "Swat ready", ready: true });
     expect(abilityStatus(cat({ id: "brother", swatCooldown: PART_SECOND }))).toEqual({

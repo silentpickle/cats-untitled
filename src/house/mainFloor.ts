@@ -6,7 +6,7 @@ import type { FurnitureDef, HouseFloor, Size3, Turns, WallDef, WallKind } from "
  * photos of the real one. Metres; x runs east, z runs south toward the camera. The fireplace
  * wall is north so the camera faces it.
  *
- * Rough map:                 north (balcony slider, fireplace)
+ * Rough map:      patio      north (balcony slider, fireplace)
  *   den (dining table) |  living room      |  primary bedroom (juts out north)
  *   kitchen + island   |                   |  hall, closet, bath
  *   laundry | stairs   |  foyer            |  bath
@@ -55,6 +55,7 @@ const COLORS = {
   bigBed: 0x8e3b3b,
   kidBed: 0x3f8f6b,
   kidRug: 0x4a79b8,
+  patioRail: 0x7a2f22,
 } as const;
 
 function wall(x1: number, z1: number, x2: number, z2: number, kind: WallKind = "wall"): WallDef {
@@ -66,11 +67,13 @@ function curb(x1: number, z1: number, x2: number, z2: number, kind: WallKind = "
 }
 
 const OUTSIDE_WALLS: readonly WallDef[] = [
-  // North: balcony slider off the den, a window either side of the fireplace, then the primary
-  // bedroom, which juts out 0.7 m past the living room, with its window.
+  // North: the sliding door off the den, its east panel slid open onto the patio, a window either
+  // side of the fireplace, then the primary bedroom, which juts out 0.7 m past the living room, with
+  // its window.
   wall(0, 0, 0.6, 0),
-  wall(0.6, 0, 2.5, 0, "slider"),
-  wall(2.5, 0, 3.1, 0),
+  // 2 m rather than the plan's 1.9 so a row of nav cells fits through the open half for Aragorn.
+  wall(0.6, 0, 2.6, 0, "catDoor"),
+  wall(2.6, 0, 3.1, 0),
   wall(3.1, 0, 3.9, 0, "window"),
   wall(3.9, 0, 5.9, 0),
   wall(5.9, 0, 6.7, 0, "window"),
@@ -93,6 +96,69 @@ const OUTSIDE_WALLS: readonly WallDef[] = [
   // The second bedroom sticks out past the front door.
   curb(7.95, 9.4, 7.95, 12.1),
   curb(7.95, 12.1, 11.4, 12.1),
+];
+
+/** The patio out the sliding door: red-stained boards, railed on three sides. */
+const PATIO = { minX: 0.5, minZ: -1.8, maxX: 2.9, maxZ: 0 } as const;
+const RAIL = {
+  thick: 0.08,
+  postSize: 0.1,
+  postSpacing: 0.6,
+  topLift: 0.78,
+  topHeight: 0.07,
+  midLift: 0.4,
+  midHeight: 0.05,
+} as const;
+
+function railBar(id: string, from: Vec2, to: Vec2, lift: number, h: number): FurnitureDef {
+  return {
+    id,
+    model: null,
+    pos: { x: (from.x + to.x) * HALF, z: (from.z + to.z) * HALF },
+    size: {
+      w: Math.abs(to.x - from.x) + RAIL.thick,
+      d: Math.abs(to.z - from.z) + RAIL.thick,
+      h,
+    },
+    turns: FACES_SOUTH,
+    lift,
+    color: COLORS.patioRail,
+  };
+}
+
+function railPosts(id: string, from: Vec2, to: Vec2): FurnitureDef[] {
+  const span = Math.hypot(to.x - from.x, to.z - from.z);
+  const gaps = Math.max(1, Math.round(span / RAIL.postSpacing));
+  return Array.from({ length: gaps + 1 }, (_, i) => ({
+    id: `${id}_post_${String(i)}`,
+    model: null,
+    pos: { x: from.x + ((to.x - from.x) * i) / gaps, z: from.z + ((to.z - from.z) * i) / gaps },
+    size: { w: RAIL.postSize, d: RAIL.postSize, h: RAIL.topLift },
+    turns: FACES_SOUTH,
+    color: COLORS.patioRail,
+  }));
+}
+
+/** One side of the railing. The top rail is what stops the cats; posts and the middle rail are looks. */
+function patioRail(id: string, from: Vec2, to: Vec2): FurnitureDef[] {
+  return [
+    { ...railBar(`${id}_top`, from, to, RAIL.topLift, RAIL.topHeight), blocks: "both" },
+    railBar(`${id}_mid`, from, to, RAIL.midLift, RAIL.midHeight),
+    ...railPosts(id, from, to),
+  ];
+}
+
+const PATIO_CORNERS = {
+  houseWest: { x: PATIO.minX, z: PATIO.maxZ },
+  farWest: { x: PATIO.minX, z: PATIO.minZ },
+  farEast: { x: PATIO.maxX, z: PATIO.minZ },
+  houseEast: { x: PATIO.maxX, z: PATIO.maxZ },
+} as const;
+
+const PATIO_RAILS: readonly FurnitureDef[] = [
+  ...patioRail("rail_west", PATIO_CORNERS.houseWest, PATIO_CORNERS.farWest),
+  ...patioRail("rail_north", PATIO_CORNERS.farWest, PATIO_CORNERS.farEast),
+  ...patioRail("rail_east", PATIO_CORNERS.farEast, PATIO_CORNERS.houseEast),
 ];
 
 const INSIDE_WALLS: readonly WallDef[] = [
@@ -804,7 +870,8 @@ const BEDROOM_WING: readonly FurnitureDef[] = [
 export const MAIN_FLOOR: HouseFloor = {
   id: "main",
   name: "Main floor",
-  bounds: { minX: 0, minZ: -0.7, maxX: 11.4, maxZ: 12.1 },
+  // Reaches past the patio by a whole number of 0.25 m nav cells, so the grid indoors lines up as before.
+  bounds: { minX: 0, minZ: -1.95, maxX: 11.4, maxZ: 12.1 },
   floors: [
     { rect: { minX: 0, minZ: 0, maxX: 7, maxZ: 9.4 }, material: "wood" },
     { rect: { minX: 0, minZ: 9.4, maxX: 7.95, maxZ: 12.1 }, material: "concrete" },
@@ -820,9 +887,10 @@ export const MAIN_FLOOR: HouseFloor = {
     { rect: { minX: 8.8, minZ: 6.3, maxX: 11.4, maxZ: 8.3 }, material: "tile" },
     { rect: { minX: 7.95, minZ: 8.3, maxX: 11.4, maxZ: 12.1 }, material: "carpet" },
     { rect: { minX: 0.7, minZ: 0.1, maxX: 2.4, maxZ: 1 }, material: "sunbeam" },
+    { rect: PATIO, material: "deck" },
   ],
   walls: [...OUTSIDE_WALLS, ...INSIDE_WALLS],
-  furniture: [...LIVING, ...DEN, ...KITCHEN, ...LAUNDRY, ...FOYER, ...BEDROOM_WING],
+  furniture: [...PATIO_RAILS, ...LIVING, ...DEN, ...KITCHEN, ...LAUNDRY, ...FOYER, ...BEDROOM_WING],
   napPoints: [
     { id: "sunbeam", name: "Sunbeam", pos: { x: 1.5, z: 0.6 }, height: 0 },
     { id: "fireplace", name: "Fireplace", pos: { x: 4.85, z: 1.05 }, height: 0 },
@@ -841,6 +909,7 @@ export const MAIN_FLOOR: HouseFloor = {
     { id: "treat_foyer", pos: { x: 6.3, z: 7 } },
     { id: "treat_closet", pos: { x: 8.9, z: 4.6 } },
     { id: "treat_bedroom", pos: { x: 9.3, z: 10.4 } },
+    { id: "treat_patio", pos: { x: 1.7, z: -1 } },
   ],
   knockables: [
     { id: "cup", name: "coffee cup", pos: { x: 1.75, z: 3.87 }, height: 0.95, look: "cup" },
@@ -905,4 +974,17 @@ export const MAIN_FLOOR: HouseFloor = {
     },
   ],
   spawn: { brother: { x: 5.2, z: 5.2 }, sister: { x: 4, z: 5 } },
+  // In through the open half of the slider, round the den and living room, and back out.
+  bird: {
+    patio: PATIO,
+    door: { x: 2.1, z: 0.35 },
+    outside: { x: 1.7, z: -1.4 },
+    perches: [
+      { pos: { x: 2.86, z: 0.44 }, height: 0.82 },
+      { pos: { x: 4.85, z: 0.3 }, height: 1.27 },
+      { pos: { x: 6.9, z: 2.4 }, height: 0.88 },
+      { pos: { x: 5.35, z: 2.4 }, height: 0.47 },
+      { pos: { x: 1.6, z: 2 }, height: 0.78 },
+    ],
+  },
 };

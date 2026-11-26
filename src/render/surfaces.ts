@@ -11,7 +11,7 @@ import {
   runner,
   vintageRug,
 } from "./surfaceFabrics";
-import { carpet, concrete, granite, hardwood, tile } from "./surfaceFloors";
+import { carpet, concrete, deck, granite, grass, hardwood, tile } from "./surfaceFloors";
 
 /** Which faces of a box carry the pattern; the rest take the edge colour. */
 export type SurfaceFaces = "top" | "front" | "all";
@@ -66,6 +66,22 @@ export const SURFACES: Record<SurfaceName, SurfaceDef> = {
     faces: "all",
     edge: 0x77787c,
     draw: concrete,
+  },
+  grass: {
+    width: PX.large,
+    height: PX.large,
+    tileMetres: 3,
+    faces: "all",
+    edge: 0x5d8a3a,
+    draw: grass,
+  },
+  deck: {
+    width: PX.large,
+    height: PX.large,
+    tileMetres: 1.4,
+    faces: "all",
+    edge: 0x7a2f22,
+    draw: deck,
   },
   granite: {
     width: PX.medium,

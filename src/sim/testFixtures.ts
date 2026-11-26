@@ -36,6 +36,7 @@ export const TEST_SETTINGS: Settings = {
   hide: { pointsPerSecond: 0.5, teaseRange: 3 },
   treats: { points: 5, respawnSeconds: 20, pickupRadius: 0.5 },
   mischief: { points: 15, knockRadius: 0.5, knockPoints: 2, resetSeconds: 25 },
+  bird: { seconds: 8, speed: 3, scareRadius: 1, cooldownSeconds: 40 },
 };
 
 export const BOUNDS: Rect = { minX: 0, minZ: 0, maxX: 12, maxZ: 10 };

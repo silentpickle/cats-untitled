@@ -26,8 +26,25 @@ const WALLS = {
   lowerColor: 0x5d667a,
   railColor: 0xf7f5f0,
   doorColor: 0xfaf7f0,
-  glassColor: 0xcfeaff,
-  glassGlow: 0.9,
+  frameColor: 0xf4f2ec,
+  trackColor: 0x6f6a64,
+} as const;
+
+/**
+ * Window and slider glass: a thin pane, nearly clear, in a white frame. The panes draw after everything
+ * else, always in the same order, so they never trade places with the nap rings from frame to frame.
+ */
+const GLASS = {
+  color: 0xdcefff,
+  opacity: 0.16,
+  roughness: 0.05,
+  pane: 0.02,
+  frame: 0.05,
+  frameDepth: 0.07,
+  /** How far outside the wall's centre line the slid-open panel runs. */
+  outsideTrack: 0.07,
+  trackHeight: 0.015,
+  drawOrder: 10,
 } as const;
 
 interface FloorLook {
@@ -48,7 +65,11 @@ const FLOORS: Record<FloorMaterial, FloorLook> = {
   concrete: { surface: "concrete", color: PLAIN, glow: NO_GLOW },
   stairwell: { surface: "hardwood", color: 0x4a403c, glow: NO_GLOW },
   sunbeam: { surface: "hardwood", color: 0xffe7b0, glow: 0x5a3a12 },
+  deck: { surface: "deck", color: PLAIN, glow: NO_GLOW },
 };
+
+/** The lawn reaches this far past the house on every side, well past anything the camera sees. */
+const YARD_MARGIN = 20;
 /** Floors draw before everything else, later areas on top of earlier ones. */
 const FLOOR_DRAW_ORDER = -1000;
 const OPENING_GAP = 0.02;
@@ -57,10 +78,12 @@ const FLOOR_ROUGHNESS = 0.85;
 const DEFAULT_BOX_COLOR = 0xb0a090;
 const GLOW = { intensity: 6, distance: 4.5, emissive: 2 } as const;
 
+/** A slice of a wall between two heights: solid paint, or a glazed opening. */
 interface Band {
   readonly from: number;
   readonly to: number;
   readonly material: THREE.Material;
+  readonly glazed?: boolean;
 }
 
 /**
@@ -83,10 +106,9 @@ function worldUvs(geometry: THREE.PlaneGeometry, rect: Rect, tileMetres: number)
  * layer order, each one painting over the last. Stacking them a few millimetres apart instead lifted the top
  * layers above the rugs and the see-through nap rings, which then flickered in and out of the floor.
  */
-function floorMesh(rect: Rect, material: FloorMaterial, layer: number): THREE.Mesh {
+function groundMesh(rect: Rect, look: FloorLook, drawOrder: number): THREE.Mesh {
   const width = rect.maxX - rect.minX;
   const depth = rect.maxZ - rect.minZ;
-  const look = FLOORS[material];
   const geometry = new THREE.PlaneGeometry(width, depth);
   worldUvs(geometry, rect, SURFACES[look.surface].tileMetres ?? 1);
   const mesh = new THREE.Mesh(
@@ -101,11 +123,26 @@ function floorMesh(rect: Rect, material: FloorMaterial, layer: number): THREE.Me
       depthFunc: THREE.AlwaysDepth,
     }),
   );
-  mesh.renderOrder = FLOOR_DRAW_ORDER + layer;
+  mesh.renderOrder = drawOrder;
   mesh.rotation.x = -QUARTER_TURN;
   mesh.position.set(rect.minX + width * HALF, 0, rect.minZ + depth * HALF);
   mesh.receiveShadow = true;
   return mesh;
+}
+
+function floorMesh(rect: Rect, material: FloorMaterial, layer: number): THREE.Mesh {
+  return groundMesh(rect, FLOORS[material], FLOOR_DRAW_ORDER + layer);
+}
+
+/** Grass all round the house, drawn before the floors so they paint over it indoors. */
+function yardMesh(bounds: Rect): THREE.Mesh {
+  const yard: Rect = {
+    minX: bounds.minX - YARD_MARGIN,
+    minZ: bounds.minZ - YARD_MARGIN,
+    maxX: bounds.maxX + YARD_MARGIN,
+    maxZ: bounds.maxZ + YARD_MARGIN,
+  };
+  return groundMesh(yard, { surface: "grass", color: PLAIN, glow: NO_GLOW }, FLOOR_DRAW_ORDER - 1);
 }
 
 function wallBands(kind: WallKind, mats: WallMaterials): Band[] {
@@ -120,11 +157,12 @@ function wallBands(kind: WallKind, mats: WallMaterials): Band[] {
     ],
     window: [
       { from: 0, to: WALLS.sillHeight, material: mats.lower },
-      { from: WALLS.sillHeight, to: WALLS.headerStart, material: mats.glass },
+      { from: WALLS.sillHeight, to: WALLS.headerStart, material: mats.glass, glazed: true },
       header,
     ],
-    slider: [{ from: 0, to: WALLS.headerStart, material: mats.glass }, header],
+    slider: [{ from: 0, to: WALLS.headerStart, material: mats.glass, glazed: true }, header],
     door: [{ from: 0, to: WALLS.headerStart, material: mats.door }, header],
+    catDoor: [header],
   };
   return table[kind];
 }
@@ -141,6 +179,8 @@ interface WallMaterials {
   readonly rail: THREE.Material;
   readonly door: THREE.Material;
   readonly glass: THREE.Material;
+  readonly frame: THREE.Material;
+  readonly track: THREE.Material;
 }
 
 function wallMaterials(): WallMaterials {
@@ -149,34 +189,126 @@ function wallMaterials(): WallMaterials {
     lower: new THREE.MeshStandardMaterial({ color: WALLS.lowerColor, roughness: 1 }),
     rail: new THREE.MeshStandardMaterial({ color: WALLS.railColor, roughness: 0.7 }),
     door: new THREE.MeshStandardMaterial({ color: WALLS.doorColor, roughness: 0.6 }),
+    // No depth write: whatever is behind the pane (the yard, a cat on the patio) still draws through it.
     glass: new THREE.MeshStandardMaterial({
-      color: WALLS.glassColor,
-      emissive: WALLS.glassColor,
-      emissiveIntensity: WALLS.glassGlow,
+      color: GLASS.color,
+      transparent: true,
+      opacity: GLASS.opacity,
+      roughness: GLASS.roughness,
+      depthWrite: false,
     }),
+    frame: new THREE.MeshStandardMaterial({ color: WALLS.frameColor, roughness: 0.6 }),
+    track: new THREE.MeshStandardMaterial({ color: WALLS.trackColor, roughness: 0.8 }),
   };
 }
 
-function wallMeshes(wall: WallDef, mats: WallMaterials): THREE.Mesh[] {
+/**
+ * A wall laid out in its own frame: local x runs along it, y up, z across it. The group is placed and
+ * turned so the pieces built in that frame land in the house.
+ */
+interface WallFrame {
+  readonly group: THREE.Group;
+  readonly length: number;
+  readonly thickness: number;
+}
+
+function wallFrame(wall: WallDef): WallFrame {
   const rect = wallRect(wall);
+  const alongX = wall.from.z === wall.to.z;
   // Plain walls overlap their neighbours to fill corners. Windows and doors are a different colour,
   // so they stop short of the neighbouring wall and sit a hair thinner: no two faces share a plane.
   const inset = wall.kind === "wall" ? 0 : WALL_THICKNESS + OPENING_GAP;
+  const spanX = rect.maxX - rect.minX;
+  const spanZ = rect.maxZ - rect.minZ;
+  const group = new THREE.Group();
+  group.position.set(rect.minX + spanX * HALF, 0, rect.minZ + spanZ * HALF);
+  group.rotation.y = alongX ? 0 : QUARTER_TURN;
+  return {
+    group,
+    length: Math.max((alongX ? spanX : spanZ) - inset, OPENING_GAP),
+    thickness: Math.max((alongX ? spanZ : spanX) - OPENING_GAP, OPENING_GAP),
+  };
+}
+
+/** A box in the wall's own frame, `x` along it, `z` across it, standing on `from`. */
+function block(
+  size: { readonly w: number; readonly h: number; readonly d: number },
+  at: { readonly x: number; readonly from: number; readonly z: number },
+  material: THREE.Material,
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.w, size.h, size.d), material);
+  mesh.position.set(at.x, at.from + size.h * HALF, at.z);
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+/** One sheet of glass in a white frame, `width` wide, centred `x` along the wall and `z` across it. */
+function glazedPanel(
+  width: number,
+  band: Band,
+  at: { readonly x: number; readonly z: number },
+  mats: WallMaterials,
+): THREE.Mesh[] {
+  const height = band.to - band.from;
+  const depth = GLASS.frameDepth;
+  const side = (width - GLASS.frame) * HALF;
+  // Tucked half a frame inside the frame on every side, so no face of the glass shares a plane with it.
+  const pane = block(
+    { w: width - GLASS.frame, h: height - GLASS.frame, d: GLASS.pane },
+    { x: at.x, from: band.from + GLASS.frame * HALF, z: at.z },
+    mats.glass,
+  );
+  pane.renderOrder = GLASS.drawOrder;
+  pane.receiveShadow = false;
+  const rails = [band.from, band.to - GLASS.frame].map((from) =>
+    block({ w: width, h: GLASS.frame, d: depth }, { x: at.x, from, z: at.z }, mats.frame),
+  );
+  const stiles = [-side, side].map((offset) =>
+    block(
+      { w: GLASS.frame, h: height, d: depth },
+      { x: at.x + offset, from: band.from, z: at.z },
+      mats.frame,
+    ),
+  );
+  return [pane, ...rails, ...stiles];
+}
+
+/**
+ * A sliding door left half open: the fixed panel at the `from` end, the moving one slid back over it on
+ * the outside track, and a floor track across the open half.
+ */
+function catDoorPanels(wall: WallDef, frame: WallFrame, mats: WallMaterials): THREE.Mesh[] {
   const alongX = wall.from.z === wall.to.z;
-  const width = Math.max(rect.maxX - rect.minX - (alongX ? inset : OPENING_GAP), OPENING_GAP);
-  const depth = Math.max(rect.maxZ - rect.minZ - (alongX ? OPENING_GAP : inset), OPENING_GAP);
+  const fromSide = alongX ? Math.sign(wall.from.x - wall.to.x) : Math.sign(wall.to.z - wall.from.z);
+  const half = frame.length * HALF;
+  const fixedX = fromSide * half * HALF;
+  const glass: Band = { from: 0, to: WALLS.headerStart, material: mats.glass };
+  const track = block(
+    { w: half, h: GLASS.trackHeight, d: frame.thickness },
+    { x: -fixedX, from: 0, z: 0 },
+    mats.track,
+  );
+  return [
+    track,
+    ...glazedPanel(half, glass, { x: fixedX, z: 0 }, mats),
+    ...glazedPanel(half, glass, { x: fixedX, z: -GLASS.outsideTrack }, mats),
+  ];
+}
+
+function bandMeshes(frame: WallFrame, band: Band, mats: WallMaterials): THREE.Mesh[] {
+  if (band.glazed === true) return glazedPanel(frame.length, band, { x: 0, z: 0 }, mats);
+  const size = { w: frame.length, h: band.to - band.from, d: frame.thickness };
+  return [block(size, { x: 0, from: band.from, z: 0 }, band.material)];
+}
+
+function wallObject(wall: WallDef, mats: WallMaterials): THREE.Group {
+  const frame = wallFrame(wall);
   const bands = wall.cutaway === true ? curbBands(wall.kind, mats) : wallBands(wall.kind, mats);
-  return bands.map((band) => {
-    const height = band.to - band.from;
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), band.material);
-    mesh.position.set(
-      rect.minX + (rect.maxX - rect.minX) * HALF,
-      band.from + height * HALF,
-      rect.minZ + (rect.maxZ - rect.minZ) * HALF,
-    );
-    mesh.receiveShadow = true;
-    return mesh;
-  });
+  frame.group.add(...bands.flatMap((band) => bandMeshes(frame, band, mats)));
+  if (wall.kind === "catDoor" && wall.cutaway !== true) {
+    frame.group.add(...catDoorPanels(wall, frame, mats));
+  }
+  return frame.group;
 }
 
 /** The kit's fabric is a pink-red; anything redder than this ratio over green counts as fabric. */
@@ -320,12 +452,13 @@ async function furnitureObject(item: FurnitureDef): Promise<THREE.Object3D> {
 /** Builds everything that does not move: floors, walls and furniture. */
 export async function buildHouse(floor: HouseFloor): Promise<THREE.Group> {
   const group = new THREE.Group();
+  group.add(yardMesh(floor.bounds));
   floor.floors.forEach((area, layer) => {
     group.add(floorMesh(area.rect, area.material, layer));
   });
   const mats = wallMaterials();
   for (const wall of floor.walls) {
-    group.add(...wallMeshes(wall, mats));
+    group.add(wallObject(wall, mats));
   }
   const furniture = await Promise.all(floor.furniture.map(furnitureObject));
   group.add(...furniture);

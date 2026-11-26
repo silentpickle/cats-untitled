@@ -54,6 +54,15 @@ knock_radius = 0.45
 knock_points = 2
 reset_seconds = 25.0
 
+[bird]
+# Now and then a bird follows Aragorn in from the patio, and he chases it until it finds the door again.
+# seconds: how long it stays in. speed: metres a second, quicker than he runs. It moves to the next perch
+# when he comes within scare_radius. cooldown_seconds: wait after one leaves before another can come in.
+seconds = 9.0
+speed = 3.2
+scare_radius = 1.1
+cooldown_seconds = 40.0
+
 [camera]
 height = 9.0
 distance = 7.0

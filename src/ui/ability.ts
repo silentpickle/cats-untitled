@@ -10,6 +10,9 @@ function wholeSeconds(seconds: number): string {
 }
 
 function swatStatus(cat: CatState): AbilityStatus {
+  if (cat.chasing) {
+    return { text: "Chasing the bird!", ready: false };
+  }
   if (cat.swatCooldown > 0) {
     return { text: `Swat in ${wholeSeconds(cat.swatCooldown)}`, ready: false };
   }
