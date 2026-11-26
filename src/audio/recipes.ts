@@ -16,6 +16,7 @@ export const SOUND_NAMES = [
   "capture_lost",
   "knock",
   "mischief",
+  "chirp",
   "round_win",
   "round_lose",
 ] as const;
@@ -413,6 +414,30 @@ const ROUND_LOSE: Recipe = [
   },
 ];
 
+/** Two quick falling whistles, a sparrow's "tsip-tsip". */
+const CHIRP: Recipe = [
+  {
+    kind: "tone",
+    start: 0,
+    wave: "sine",
+    pitch: [
+      { at: 0, hz: 3600 },
+      { at: 0.06, hz: 2500 },
+    ],
+    envelope: { attack: 0.004, hold: 0.03, release: 0.05, peak: 0.16 },
+  },
+  {
+    kind: "tone",
+    start: 0.13,
+    wave: "sine",
+    pitch: [
+      { at: 0, hz: 3800 },
+      { at: 0.07, hz: 2600 },
+    ],
+    envelope: { attack: 0.004, hold: 0.035, release: 0.06, peak: 0.16 },
+  },
+];
+
 export const RECIPES: Readonly<Record<SoundName, Recipe>> = {
   meow_brother: MEOW_BROTHER,
   meow_sister: MEOW_SISTER,
@@ -424,6 +449,7 @@ export const RECIPES: Readonly<Record<SoundName, Recipe>> = {
   capture_lost: CAPTURE_LOST,
   knock: KNOCK,
   mischief: MISCHIEF,
+  chirp: CHIRP,
   round_win: ROUND_WIN,
   round_lose: ROUND_LOSE,
 };

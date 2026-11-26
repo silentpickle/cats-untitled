@@ -1,5 +1,6 @@
 import type { CatId, CatState, GameState, Settings, WorldDef } from "./types";
 import { isHidden } from "./hide";
+import { NO_BIRD } from "./bird";
 
 function newCat(id: CatId, world: WorldDef): CatState {
   const pos = world.spawn[id];
@@ -15,6 +16,7 @@ function newCat(id: CatId, world: WorldDef): CatState {
     swatCooldown: 0,
     stealthFor: 0,
     stealthCooldown: 0,
+    chasing: false,
     score: 0,
   };
 }
@@ -29,6 +31,7 @@ export function createGame(world: WorldDef, settings: Settings): GameState {
     treats: world.treatSpawns.map((t) => ({ id: t.id, available: true, respawnIn: 0 })),
     knockables: world.knockables.map((k) => ({ id: k.id, knockedBy: null, resetIn: 0 })),
     mischief: world.mischief.map((m) => ({ id: m.id, cat: m.cat, done: false, progress: 0 })),
+    bird: NO_BIRD,
     events: [],
   };
 }

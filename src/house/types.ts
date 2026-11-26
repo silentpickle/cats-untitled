@@ -1,4 +1,5 @@
 import type {
+  BirdPathDef,
   Blocks,
   KnockableDef,
   MischiefDef,
@@ -52,6 +53,8 @@ export type SurfaceName =
   | "tile"
   | "carpet"
   | "concrete"
+  | "grass"
+  | "deck"
   | "granite"
   | "vintageRug"
   | "plaid"
@@ -63,7 +66,11 @@ export type SurfaceName =
   | "treePainting"
   | "catPainting";
 
-export type WallKind = "wall" | "window" | "slider" | "door";
+/**
+ * `catDoor` is a two-panel sliding door left half open: the panel at the `to` end stands slid back over
+ * the fixed one at the `from` end, on the outside track, and cats walk through the `to` half.
+ */
+export type WallKind = "wall" | "window" | "slider" | "door" | "catDoor";
 
 /** Axis-aligned wall segment. */
 export interface WallDef {
@@ -74,7 +81,8 @@ export interface WallDef {
   readonly cutaway?: boolean;
 }
 
-export type FloorMaterial = "carpet" | "tile" | "wood" | "concrete" | "stairwell" | "sunbeam";
+export type FloorMaterial =
+  "carpet" | "tile" | "wood" | "concrete" | "stairwell" | "sunbeam" | "deck";
 
 export interface FloorAreaDef {
   readonly rect: Rect;
@@ -94,6 +102,16 @@ export interface KnockablePlacement extends KnockableDef {
   readonly look: KnockableLook;
 }
 
+/** A place the bird lands, and how high off the floor (a table top, the cat tree). */
+export interface PerchPlacement {
+  readonly pos: Vec2;
+  readonly height: number;
+}
+
+export interface BirdPathPlacement extends Omit<BirdPathDef, "perches"> {
+  readonly perches: readonly PerchPlacement[];
+}
+
 export interface HouseFloor {
   readonly id: string;
   readonly name: string;
@@ -106,4 +124,6 @@ export interface HouseFloor {
   readonly knockables: readonly KnockablePlacement[];
   readonly mischief: readonly MischiefDef[];
   readonly spawn: { readonly brother: Vec2; readonly sister: Vec2 };
+  /** Where a bird can follow Aragorn in; omitted for a house shut to the outside. */
+  readonly bird?: BirdPathPlacement;
 }

@@ -312,6 +312,7 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 0,
+     "chasing": false,
      "score": 17
     },
     "sister": {
@@ -329,6 +330,7 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 1.9833333333333059,
+     "chasing": false,
      "score": 7.9499999999999895
     }
    },
@@ -418,6 +420,11 @@
      "id": "treat_bedroom",
      "available": true,
      "respawnIn": 0
+    },
+    {
+     "id": "treat_patio",
+     "available": true,
+     "respawnIn": 0
     }
    ],
    "knockables": [
@@ -499,6 +506,18 @@
      "progress": 0
     }
    ],
+   "bird": {
+    "phase": "away",
+    "pos": {
+     "x": 0,
+     "z": 0
+    },
+    "target": 0,
+    "perched": false,
+    "inFor": 0,
+    "cooldown": 0,
+    "brotherOutside": false
+   },
    "events": []
   }
  },
@@ -806,6 +825,7 @@
      "swatCooldown": 0.9333333333333438,
      "stealthFor": 0,
      "stealthCooldown": 0,
+     "chasing": false,
      "score": 54.69999999999985
     },
     "sister": {
@@ -823,6 +843,7 @@
      "swatCooldown": 0,
      "stealthFor": 0,
      "stealthCooldown": 1.9833333333333059,
+     "chasing": false,
      "score": 0
     }
    },
@@ -912,6 +933,11 @@
      "id": "treat_bedroom",
      "available": true,
      "respawnIn": 0
+    },
+    {
+     "id": "treat_patio",
+     "available": true,
+     "respawnIn": 0
     }
    ],
    "knockables": [
@@ -993,6 +1019,18 @@
      "progress": 0
     }
    ],
+   "bird": {
+    "phase": "away",
+    "pos": {
+     "x": 0,
+     "z": 0
+    },
+    "target": 0,
+    "perched": false,
+    "inFor": 0,
+    "cooldown": 0,
+    "brotherOutside": false
+   },
    "events": []
   }
  }

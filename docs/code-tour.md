@@ -41,8 +41,8 @@ takes a state and the two cats' inputs and returns the next state. Everything el
 3. `feedback.ts` turns each event into a message and sounds.
 4. The views in `src/render/` and `src/ui/` are updated from the state and the frame is drawn.
 
-`step` runs a fixed list of small rules in order (`RULES` in `step.ts`): movement, timers, hiding, stealth,
-swat, napping, capture, scoring, treats, knocking, mischief, and the round clock. Each rule is one function in
+`step` runs a fixed list of small rules in order (`RULES` in `step.ts`): movement, timers, the bird, hiding,
+stealth, swat, napping, capture, scoring, treats, knocking, mischief, and the round clock. Each rule is one function in
 its own file.
 
 ## Common changes
@@ -68,6 +68,10 @@ its own file.
 `mainFloor.ts` describes the main floor in metres, with x running east and z running south toward the camera.
 
 - **Walls** are straight segments. `cutaway` walls are drawn as a low curb so the camera sees over them.
+  Windows and sliders are drawn as thin, nearly clear panes in white frames, with a lawn around the house
+  to see through them to. A `catDoor` is a slider left half open: cats walk through its `to` half.
+- **The bird** (`bird` on the floor) names the patio, the door it comes in by, and the perches it lands on.
+  `src/sim/bird.ts` runs it; Aragorn's chase follows the nav grid to wherever it is landing.
   Inside walls and the south outside wall are cutaway; only the pillar wall behind the island is full height.
 - **Floors** are rectangles with a material: `wood`, `carpet`, `tile`, `concrete` (the garage),
   `stairwell` (the stairs down) or `sunbeam`.

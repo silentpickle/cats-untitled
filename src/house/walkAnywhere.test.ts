@@ -85,4 +85,15 @@ describe("walking anywhere in the house", () => {
     },
     SCAN_TIMEOUT_MS,
   );
+
+  for (const cat of CAT_IDS) {
+    it(`W3_${cat}_patio`, () => {
+      const nav = buildNavGrid(world, cat, settings);
+      const field = nav.toTreat.get("treat_patio");
+      expect(field).toBeDefined();
+      if (field === undefined) return;
+      const start = world.spawn[cat];
+      expect(walkGap(cat, nav, start, field)).toBeLessThan(settings.treats.pickupRadius);
+    });
+  }
 });

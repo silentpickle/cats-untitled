@@ -34,9 +34,12 @@ function poseOf(cat: CatState): Pose {
   return { pos: cat.pos, facing: cat.facing, moving: cat.moving };
 }
 
-/** While the host stuns the cat or makes it flee, the guest's input does nothing, so there is nothing to predict. */
+/**
+ * While the host stuns the cat, makes it flee or has it chasing a bird, the guest's input does nothing, so
+ * there is nothing to predict.
+ */
 function hostOverrides(cat: CatState): boolean {
-  return cat.stunnedFor > 0 || cat.fleeFor > 0;
+  return cat.stunnedFor > 0 || cat.fleeFor > 0 || cat.chasing;
 }
 
 /** Negative or non-finite frame time counts as none. */

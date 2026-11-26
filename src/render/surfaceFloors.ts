@@ -129,3 +129,48 @@ export function granite(sheet: Sheet): void {
   speckle(sheet, GRANITE.cloud);
   speckle(sheet, GRANITE.flecks);
 }
+
+const GRASS = {
+  base: "#5d8a3a",
+  blades: {
+    colors: ["#4a7530", "#6f9d45", "#7fae52", "#3f6527", "#8bb85e"],
+    count: 9000,
+    maxRadius: 2,
+    alpha: 0.7,
+  },
+  clover: { colors: ["#557f35", "#68943f"], count: 120, maxRadius: 9, alpha: 0.35 },
+} as const;
+
+/** The lawn outside: mown grass with a few darker clover patches. */
+export function grass(sheet: Sheet): void {
+  fill(sheet, GRASS.base);
+  speckle(sheet, GRASS.clover);
+  speckle(sheet, GRASS.blades);
+}
+
+const DECK = {
+  boardPx: 56,
+  gapPx: 6,
+  gap: "#2a120c",
+  colors: ["#8f3a2a", "#9c4130", "#a54a36", "#88352a", "#963d2d"],
+  spread: 0.03,
+  grain: { colors: ["#6e2a1e", "#b25a44"], count: 1400, maxRadius: 2, alpha: 0.3 },
+  nail: "#3a1d16",
+  nailPx: 3,
+  nailInsetPx: 10,
+} as const;
+
+/** The patio: wide boards stained brick red, running across it with dark gaps between. */
+export function deck(sheet: Sheet): void {
+  fill(sheet, DECK.gap);
+  const { ctx, rand } = sheet;
+  for (let y = 0; y < sheet.height; y += DECK.boardPx) {
+    ctx.fillStyle = shade(rand, pick(rand, DECK.colors), DECK.spread);
+    ctx.fillRect(0, y, sheet.width, DECK.boardPx - DECK.gapPx);
+    ctx.fillStyle = DECK.nail;
+    const mid = y + (DECK.boardPx - DECK.gapPx) * HALF;
+    ctx.fillRect(DECK.nailInsetPx, mid, DECK.nailPx, DECK.nailPx);
+    ctx.fillRect(sheet.width - DECK.nailInsetPx, mid, DECK.nailPx, DECK.nailPx);
+  }
+  speckle(sheet, DECK.grain);
+}

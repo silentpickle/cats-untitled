@@ -11,17 +11,20 @@ import { pickUpTreats, tickTreats } from "./treats";
 import { tickRound } from "./round";
 import { knockThings, resetKnocked } from "./knock";
 import { updateMischief } from "./mischief";
+import { updateBird } from "./bird";
 import { clamp } from "./geometry";
 
 /**
  * The rules, in the order they run each step. Movement comes first so everything after it sees where
- * the cats ended up; timers tick before the swat so a fresh stun or cooldown lasts its full length;
+ * the cats ended up; timers tick before the swat so a fresh stun or cooldown lasts its full length; the bird
+ * moves once Aragorn has, so it sees whether he just stepped in off the patio;
  * mischief runs after every rule whose events it reads; the round clock runs last so the final step
  * still scores.
  */
 const RULES: readonly Rule[] = [
   applyMovement,
   tickTimers,
+  updateBird,
   updateHidden,
   applyStealth,
   applySwat,
@@ -56,7 +59,7 @@ export function step(
     world,
     settings,
     dt: usableDt(dt, state.timeLeft),
-    inputs: effectiveInputs(state, inputs),
+    inputs: effectiveInputs(state, inputs, { world, settings }),
   };
   return RULES.reduce((s, rule) => rule(s, ctx), fresh);
 }

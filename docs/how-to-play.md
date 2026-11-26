@@ -69,9 +69,17 @@ food bowl, the warm dryer, the shag rug, the big bed and the kid's bed.
 
 ### Treats
 
-Six gold treats sit around the house: in the kitchen, under the dining table, in front of the TV, in the
-foyer, in the walk-in closet and in the kid's bedroom. Walk over one to eat it; it comes back 20 seconds
+Seven gold treats sit around the house: in the kitchen, under the dining table, in front of the TV, in the
+foyer, in the walk-in closet, in the kid's bedroom, and out on the patio. Walk over one to eat it; it comes back 20 seconds
 later. The one under the dining table is where only Arwen can reach.
+
+### The patio and the bird
+
+The right-hand panel of the sliding door in the den stands open onto a small red-stained patio, so either cat
+can wander out. When Aragorn comes back in, a bird may follow him. He can't help himself: while it is in he
+chases it, whatever his player wants, and cannot swat. It flits between the cat tree, the mantel, the back of
+the couch, the coffee table and the dining table, moving on whenever he gets close, and after 9 seconds it
+finds the door and flies off. Another can't follow him in for 40 seconds after that.
 
 ### Knocking things over
 

@@ -1,4 +1,4 @@
-import type { CatState, GameState, NapPointState, Vec2 } from "../sim/types";
+import type { BirdState, CatState, GameState, NapPointState, Vec2 } from "../sim/types";
 
 const FULL_TURN = Math.PI + Math.PI;
 
@@ -31,6 +31,12 @@ function blendPoint(from: NapPointState | undefined, to: NapPointState, t: numbe
   return { ...to, progress: lerp(from.progress, to.progress, t) };
 }
 
+/** The bird only blends while it is in the house in both snapshots, so it never slides in from where it left. */
+function blendBird(from: BirdState, to: BirdState, t: number): BirdState {
+  if (from.phase === "away" || to.phase === "away") return to;
+  return { ...to, pos: lerpVec(from.pos, to.pos, t) };
+}
+
 function blendBetween(from: GameState, to: GameState, t: number): GameState {
   const fromPoints = new Map(from.points.map((p) => [p.id, p]));
   return {
@@ -41,13 +47,14 @@ function blendBetween(from: GameState, to: GameState, t: number): GameState {
       sister: blendCat(from.cats.sister, to.cats.sister, t),
     },
     points: to.points.map((p) => blendPoint(fromPoints.get(p.id), p, t)),
+    bird: blendBird(from.bird, to.bird, t),
     events: [],
   };
 }
 
 /**
  * What to draw `t` of the way (clamped to 0..1) from one host snapshot to the next. Positions, facings,
- * the clock and nap meters blend; every discrete field (phase, timers, scores, owners, treats, knockables,
+ * the clock, nap meters and the bird blend; every discrete field (phase, timers, scores, owners, treats, knockables,
  * mischief) is `to`'s. At the ends (and for a NaN `t`, read as 0) it is exactly `from` or `to`.
  * `events` is always empty: events are played once, when their snapshot arrives.
  */

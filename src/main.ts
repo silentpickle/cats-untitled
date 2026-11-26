@@ -10,6 +10,7 @@ import { pickGoal } from "./input/tapGoal";
 import { loadCatViews, type CatView } from "./render/catView";
 import { FollowCamera } from "./render/followCamera";
 import { sightLine } from "./render/groundPicker";
+import { BirdView } from "./render/birdView";
 import { buildHouse } from "./render/houseView";
 import { KnockableViews } from "./render/knockableViews";
 import { Markers } from "./render/markers";
@@ -87,6 +88,7 @@ class Game implements GameHooks {
     private readonly cats: Record<CatId, CatView>,
     private readonly markers: Markers,
     private readonly knockables: KnockableViews,
+    private readonly bird: BirdView,
     private readonly controls: Controls,
   ) {
     this.idle = createGame(world, settings.sim);
@@ -363,6 +365,7 @@ class Game implements GameHooks {
     }
     this.markers.update(this.state, dt);
     this.knockables.update(this.state, dt);
+    this.bird.update(this.state.bird, dt);
     this.hud.update(this.state);
     this.mischiefList.update(this.state);
     if (this.player !== null) {
@@ -442,10 +445,12 @@ async function boot(): Promise<Game> {
   const [house, cats] = await Promise.all([buildHouse(floor), loadCatViews(settings.sim.cats)]);
   const markers = new Markers(floor.napPoints, floor.treatSpawns);
   const knockables = new KnockableViews(floor.knockables);
+  const bird = new BirdView(floor.bird);
   stage.scene.add(
     house,
     markers.object,
     knockables.object,
+    bird.object,
     cats.brother.object,
     cats.sister.object,
   );
@@ -454,7 +459,7 @@ async function boot(): Promise<Game> {
     brother: buildNavGrid(world, "brother", settings.sim),
     sister: buildNavGrid(world, "sister", settings.sim),
   };
-  const game = new Game(settings, floor, world, navs, stage, cats, markers, knockables, {
+  const game = new Game(settings, floor, world, navs, stage, cats, markers, knockables, bird, {
     keyboard: new Keyboard(window),
     ability: new AbilityButton(element("swat-button", HTMLElement)),
   });

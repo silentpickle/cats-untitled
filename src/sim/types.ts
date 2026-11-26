@@ -69,6 +69,21 @@ export interface MischiefDef {
   readonly goal: MischiefGoal;
 }
 
+/**
+ * Where a bird can follow Aragorn in from the patio, and where it lands once inside. A house without an
+ * open door to the outside has none.
+ */
+export interface BirdPathDef {
+  /** Aragorn counts as outside while he stands here. */
+  readonly patio: Rect;
+  /** Just inside the open door: the bird comes in and goes out here. */
+  readonly door: Vec2;
+  /** Out over the patio, where the bird flies off. */
+  readonly outside: Vec2;
+  /** Places it lands, in the order it flits between them. */
+  readonly perches: readonly Vec2[];
+}
+
 export interface WorldDef {
   readonly bounds: Rect;
   readonly obstacles: readonly Obstacle[];
@@ -78,6 +93,7 @@ export interface WorldDef {
   readonly knockables: readonly KnockableDef[];
   readonly mischief: readonly MischiefDef[];
   readonly spawn: Readonly<Record<CatId, Vec2>>;
+  readonly bird?: BirdPathDef;
 }
 
 export interface CatSettings {
@@ -118,6 +134,15 @@ export interface Settings {
     readonly knockPoints: number;
     readonly resetSeconds: number;
   };
+  readonly bird: {
+    /** How long it stays in before heading back out. */
+    readonly seconds: number;
+    readonly speed: number;
+    /** Aragorn this close sends it off its perch to the next one. */
+    readonly scareRadius: number;
+    /** Wait after one leaves before another can follow him in. */
+    readonly cooldownSeconds: number;
+  };
 }
 
 export interface CatState {
@@ -140,6 +165,8 @@ export interface CatState {
   readonly stealthFor: number;
   /** Sister only: seconds until she can go stealthy again, counted from when she last did. */
   readonly stealthCooldown: number;
+  /** Brother only: a bird is in and he cannot help chasing it; his own input is ignored. */
+  readonly chasing: boolean;
   readonly score: number;
 }
 
@@ -173,6 +200,23 @@ export interface MischiefState {
   readonly progress: number;
 }
 
+/** No bird; in the house, flitting between perches; on its way back out the door. */
+export type BirdPhase = "away" | "in" | "leaving";
+
+export interface BirdState {
+  readonly phase: BirdPhase;
+  readonly pos: Vec2;
+  /** While in, the perch it is on or flying to; while leaving, 0 for the door and 1 for outside. */
+  readonly target: number;
+  readonly perched: boolean;
+  /** Seconds left before it heads for the door. */
+  readonly inFor: number;
+  /** Seconds until another bird can follow Aragorn in. */
+  readonly cooldown: number;
+  /** Aragorn was out on the patio at the end of the last step. */
+  readonly brotherOutside: boolean;
+}
+
 export type GameEvent =
   | { readonly kind: "captured"; readonly pointId: string; readonly by: CatId }
   | { readonly kind: "swatted"; readonly by: CatId; readonly target: CatId }
@@ -181,6 +225,8 @@ export type GameEvent =
   | { readonly kind: "treat"; readonly treatId: string; readonly by: CatId }
   | { readonly kind: "knocked"; readonly knockableId: string; readonly by: CatId }
   | { readonly kind: "mischief"; readonly mischiefId: string; readonly by: CatId }
+  | { readonly kind: "bird_in" }
+  | { readonly kind: "bird_out" }
   | { readonly kind: "round_over"; readonly winner: CatId | "tie" };
 
 export type Phase = "playing" | "finished";
@@ -193,6 +239,7 @@ export interface GameState {
   readonly treats: readonly TreatState[];
   readonly knockables: readonly KnockableState[];
   readonly mischief: readonly MischiefState[];
+  readonly bird: BirdState;
   /** Things that happened during the step that produced this state. */
   readonly events: readonly GameEvent[];
 }
