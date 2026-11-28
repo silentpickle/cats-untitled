@@ -238,33 +238,33 @@ const STARTLED: Recipe = [
   },
 ];
 
-/** Ding-ding up a fifth, C6 then G6, with a soft octave shine. */
+/** A soft mallet up a fifth, C5 then G5, with a faint octave shine. */
 const TREAT: Recipe = [
   {
     kind: "phrase",
     start: 0,
     wave: "sine",
-    attack: 0.005,
-    release: 0.4,
-    peak: 0.2,
-    overtone: { ratio: 2, level: 0.25 },
+    attack: 0.02,
+    release: 0.5,
+    peak: 0.14,
+    overtone: { ratio: 2, level: 0.1 },
     notes: [
-      { at: 0, hz: 1046.5, hold: 0.03 },
-      { at: 0.11, hz: 1567.98, hold: 0.05 },
+      { at: 0, hz: 523.25, hold: 0.04 },
+      { at: 0.12, hz: 783.99, hold: 0.06 },
     ],
   },
 ];
 
-/** C5 E5 G5 C6, quick and bright. */
+/** C5 E5 G5 C6, rolled softly like a little marimba. */
 const CAPTURE: Recipe = [
   {
     kind: "phrase",
     start: 0,
-    wave: "triangle",
-    attack: 0.008,
-    release: 0.28,
-    peak: 0.16,
-    overtone: { ratio: 2, level: 0.2 },
+    wave: "sine",
+    attack: 0.02,
+    release: 0.4,
+    peak: 0.11,
+    overtone: { ratio: 2, level: 0.08 },
     notes: [
       { at: 0, hz: 523.25, hold: 0.04 },
       { at: 0.08, hz: 659.25, hold: 0.04 },
@@ -274,15 +274,15 @@ const CAPTURE: Recipe = [
   },
 ];
 
-/** "Uh-oh": D5 down to B4, soft triangle. */
+/** "Uh-oh": D5 down to B4, two soft sine notes. */
 const CAPTURE_LOST: Recipe = [
   {
     kind: "phrase",
     start: 0,
-    wave: "triangle",
-    attack: 0.01,
-    release: 0.25,
-    peak: 0.17,
+    wave: "sine",
+    attack: 0.025,
+    release: 0.35,
+    peak: 0.11,
     notes: [
       { at: 0, hz: 587.33, hold: 0.08 },
       { at: 0.17, hz: 493.88, hold: 0.12 },
@@ -290,21 +290,21 @@ const CAPTURE_LOST: Recipe = [
   },
 ];
 
-/** A glassy clink (two inharmonic sines), then four small bursts of clatter. */
+/** A soft clink (two inharmonic sines), then four small bursts of clatter. */
 const KNOCK: Recipe = [
   {
     kind: "tone",
     start: 0,
     wave: "sine",
-    pitch: [{ at: 0, hz: 2350 }],
-    envelope: { attack: 0.002, hold: 0.01, release: 0.16, peak: 0.12 },
+    pitch: [{ at: 0, hz: 1760 }],
+    envelope: { attack: 0.006, hold: 0.01, release: 0.2, peak: 0.06 },
   },
   {
     kind: "tone",
     start: 0,
     wave: "sine",
-    pitch: [{ at: 0, hz: 3720 }],
-    envelope: { attack: 0.002, hold: 0.005, release: 0.08, peak: 0.06 },
+    pitch: [{ at: 0, hz: 2790 }],
+    envelope: { attack: 0.006, hold: 0.005, release: 0.1, peak: 0.025 },
   },
   {
     kind: "noise",
@@ -332,23 +332,23 @@ const KNOCK: Recipe = [
   },
 ];
 
-/** A quick pentatonic run up (G5 A5 C6 D6 E6) landing on G6. */
+/** A gentle pentatonic run up (G4 A4 C5 D5 E5) landing on G5. */
 const MISCHIEF: Recipe = [
   {
     kind: "phrase",
     start: 0,
-    wave: "triangle",
-    attack: 0.005,
-    release: 0.12,
-    peak: 0.13,
-    overtone: { ratio: 2, level: 0.2 },
+    wave: "sine",
+    attack: 0.02,
+    release: 0.25,
+    peak: 0.1,
+    overtone: { ratio: 2, level: 0.08 },
     notes: [
-      { at: 0, hz: 783.99, hold: 0.02 },
-      { at: 0.05, hz: 880, hold: 0.02 },
-      { at: 0.1, hz: 1046.5, hold: 0.02 },
-      { at: 0.15, hz: 1174.66, hold: 0.02 },
-      { at: 0.2, hz: 1318.51, hold: 0.02 },
-      { at: 0.27, hz: 1567.98, hold: 0.08 },
+      { at: 0, hz: 392, hold: 0.03 },
+      { at: 0.06, hz: 440, hold: 0.03 },
+      { at: 0.12, hz: 523.25, hold: 0.03 },
+      { at: 0.18, hz: 587.33, hold: 0.03 },
+      { at: 0.24, hz: 659.25, hold: 0.03 },
+      { at: 0.32, hz: 783.99, hold: 0.1 },
     ],
   },
 ];
@@ -358,11 +358,11 @@ const ROUND_WIN: Recipe = [
   {
     kind: "phrase",
     start: 0,
-    wave: "triangle",
-    attack: 0.01,
-    release: 0.35,
-    peak: 0.13,
-    overtone: { ratio: 2, level: 0.3 },
+    wave: "sine",
+    attack: 0.02,
+    release: 0.45,
+    peak: 0.1,
+    overtone: { ratio: 2, level: 0.1 },
     notes: [
       { at: 0, hz: 392, hold: 0.06 },
       { at: 0.12, hz: 523.25, hold: 0.06 },
@@ -373,10 +373,10 @@ const ROUND_WIN: Recipe = [
   {
     kind: "phrase",
     start: 0.36,
-    wave: "triangle",
-    attack: 0.02,
-    release: 0.4,
-    peak: 0.09,
+    wave: "sine",
+    attack: 0.04,
+    release: 0.45,
+    peak: 0.07,
     notes: [
       { at: 0, hz: 523.25, hold: 0.3 },
       { at: 0, hz: 659.25, hold: 0.3 },
@@ -389,10 +389,10 @@ const ROUND_LOSE: Recipe = [
   {
     kind: "phrase",
     start: 0,
-    wave: "triangle",
-    attack: 0.02,
-    release: 0.3,
-    peak: 0.13,
+    wave: "sine",
+    attack: 0.03,
+    release: 0.35,
+    peak: 0.1,
     notes: [
       { at: 0, hz: 783.99, hold: 0.1 },
       { at: 0.2, hz: 659.25, hold: 0.1 },
@@ -405,8 +405,8 @@ const ROUND_LOSE: Recipe = [
     start: 0.6,
     wave: "sine",
     attack: 0.08,
-    release: 0.5,
-    peak: 0.09,
+    release: 0.45,
+    peak: 0.07,
     notes: [
       { at: 0, hz: 261.63, hold: 0.35 },
       { at: 0, hz: 329.63, hold: 0.35 },
@@ -414,27 +414,27 @@ const ROUND_LOSE: Recipe = [
   },
 ];
 
-/** Two quick falling whistles, a sparrow's "tsip-tsip". */
+/** Two soft falling whistles, a distant sparrow's "tsip-tsip". */
 const CHIRP: Recipe = [
   {
     kind: "tone",
     start: 0,
     wave: "sine",
     pitch: [
-      { at: 0, hz: 3600 },
-      { at: 0.06, hz: 2500 },
+      { at: 0, hz: 2800 },
+      { at: 0.06, hz: 2100 },
     ],
-    envelope: { attack: 0.004, hold: 0.03, release: 0.05, peak: 0.16 },
+    envelope: { attack: 0.012, hold: 0.03, release: 0.07, peak: 0.08 },
   },
   {
     kind: "tone",
     start: 0.13,
     wave: "sine",
     pitch: [
-      { at: 0, hz: 3800 },
-      { at: 0.07, hz: 2600 },
+      { at: 0, hz: 2950 },
+      { at: 0.07, hz: 2200 },
     ],
-    envelope: { attack: 0.004, hold: 0.035, release: 0.06, peak: 0.16 },
+    envelope: { attack: 0.012, hold: 0.035, release: 0.08, peak: 0.08 },
   },
 ];
 
