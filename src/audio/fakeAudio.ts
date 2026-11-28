@@ -105,6 +105,7 @@ export class FakeOscillator extends FakeSource {
 export class FakeBufferSource extends FakeSource {
   buffer: unknown = null;
   loop = false;
+  readonly playbackRate = new FakeParam();
 }
 
 const FAKE_SAMPLE_RATE = 8000;

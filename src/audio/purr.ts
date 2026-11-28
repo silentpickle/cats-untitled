@@ -44,7 +44,7 @@ function swell(ctx: BaseAudioContext, hz: number, depth: number): Swell {
   return { node, lfo, depth: depthNode };
 }
 
-function noiseLoop(ctx: BaseAudioContext, noise: AudioBuffer): AudioBufferSourceNode {
+function bufferLoop(ctx: BaseAudioContext, noise: AudioBuffer): AudioBufferSourceNode {
   const source = ctx.createBufferSource();
   source.buffer = noise;
   source.loop = true;
@@ -61,7 +61,7 @@ function lowpass(ctx: BaseAudioContext): BiquadFilterNode {
 
 export function startPurr(ctx: BaseAudioContext, output: AudioNode, noise: AudioBuffer): Purr {
   const now = ctx.currentTime;
-  const source = noiseLoop(ctx, noise);
+  const source = bufferLoop(ctx, noise);
   const filter = lowpass(ctx);
   const pulse = swell(ctx, PURR.pulseHz, PURR.pulseDepth);
   const breath = swell(ctx, PURR.breathHz, PURR.breathDepth);
@@ -73,6 +73,21 @@ export function startPurr(ctx: BaseAudioContext, output: AudioNode, noise: Audio
   const sources = [source, pulse.lfo, breath.lfo];
   for (const node of sources) node.start(now);
   return { fade, sources, nodes: [...path, pulse.lfo, pulse.depth, breath.lfo, breath.depth] };
+}
+
+/** The recorded purr is louder per sample than the noise purr, so it sits at its own level. */
+export const SAMPLE_PURR_LEVEL = 0.28;
+
+/** The recorded purr: one breath cycle looped, with the same fade in and out as the noise purr. */
+export function startSamplePurr(ctx: BaseAudioContext, output: AudioNode, loop: AudioBuffer): Purr {
+  const now = ctx.currentTime;
+  const source = bufferLoop(ctx, loop);
+  const fade = ctx.createGain();
+  fade.gain.value = 0;
+  rampTo(fade.gain, SAMPLE_PURR_LEVEL, now, PURR.fadeInSeconds);
+  chain([source, fade], output);
+  source.start(now);
+  return { fade, sources: [source], nodes: [source, fade] };
 }
 
 /** Fades the purr out from wherever it is, then stops and disconnects every node. */
